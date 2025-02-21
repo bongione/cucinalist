@@ -1,0 +1,42 @@
+unitOfMeasure unspecifid {
+    measuring any
+    defaultSymbol
+}
+
+unitOfMeasure gram {
+    measuring weight
+    defaultSymbol g
+    aka gram, grams
+}
+
+unitOfMeasure item {
+    measuring 'item count'
+    defaultSymbol
+    aka item, items
+}
+
+unitOfMeasure clove {
+    measuring 'sub-item'
+    defaultSymbol clove
+    plural cloves
+}
+
+
+unitOfMeasure glass {
+    measuring volume
+    defaultSymbol glass
+    plural glasses
+}
+
+unitOfMeasure liter {
+    measuring volume
+    defaultSymbol l
+    aka liter, liters
+}
+
+unitOfMeasure tablespoon {
+    measuring volume
+    defaultSymbol tbsp
+    plural tbsps
+    aka tablespoon, tablespoons, spoon, spoons
+}

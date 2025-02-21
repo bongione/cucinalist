@@ -1,0 +1,49 @@
+{
+  "name": "@cucinalist/dsl",
+  "version": "0.0.1",
+  "description": "Domain-specific language (DSL) grammar, parser and walker for Cucinalist",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/types/index.d.ts",
+  "exports": {
+    "import": "./dist/index.mjs",
+    "require": "./dist/index.cjs"
+  },
+  "scripts": {
+    "build": "rollup --bundleConfigAsCjs -c",
+    "clean": "rm -rf dist",
+    "generate-ts-parser": "antlr -Xexact-output-dir src/cucinalistLexer.g4 -Dlanguage=TypeScript -o src/__generated__ && antlr -Xexact-output-dir src/cucinalistParser.g4 -Dlanguage=TypeScript -o src/__generated__ -lib src/__generated__",
+    "generate-java-parser": "antlr -Xexact-output-dir src/cucinalistLexer.g4 -o src/__generated__ && antlr -Xexact-output-dir src/cucinalistParser.g4 -o src/__generated__ -lib src/__generated__ && javac src/__generated__/*.java",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bongione/cucinalist.git"
+  },
+  "keywords": [
+    "DSL",
+    "antlr",
+    "cucinalist",
+    "grammar",
+    "parser"
+  ],
+  "author": "Paolo F. Bongiovanni <paolo.bongiovanni@mindiply.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bongione/cucinalist/issues"
+  },
+  "homepage": "https://github.com/bongione/cucinalist#readme",
+  "dependencies": {
+    "antlr4": "4.13.2"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.2",
+    "@rollup/plugin-node-resolve": "^16.0.0",
+    "@rollup/plugin-typescript": "^12.1.2",
+    "prettier": "^3.5.0",
+    "rollup": "^4.34.8",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

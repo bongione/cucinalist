@@ -1,0 +1,14 @@
+include 'unitsOfMeasure.cheffie'
+include 'pfbRecipes.cheffie'
+
+meal tonight
+    diners 6
+    recipes
+        - SpaghettiAglioOlioEPeperoncino;
+
+meal tomorrowNight
+    diners 3
+    course starter
+        - hamSandwich;
+    course Main
+        - SpaghettiAglioOlioEPeperoncino;

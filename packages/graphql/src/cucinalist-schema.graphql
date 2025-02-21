@@ -1,0 +1,142 @@
+type Query {
+  allRecipes: [Recipe]
+}
+
+type Mutation {
+  mergeFacts(cucinalistDsl: String!): MergeFactsOutcome!
+}
+
+type MergeFactsOutcome {
+  success: Boolean!
+  message: String
+  mergedElements: MergedElements
+}
+
+type MergedElements {
+  recipes: [Recipe]
+  boughtIngredients: [BoughtIngredient]
+  units: [UnitOfMeasure]
+  cookingTechniques: [CookingTechnique]
+}
+
+# A recipe represents a set of instructions for preparing a dish,
+# including a list of ingredients and steps to follow.
+type Recipe {
+  typename: String!
+  id: ID!
+  name: String!
+  serves: Int!
+  description: String
+  ingredients: [RecipeIngredient!]!
+  steps: [CookingStep!]!
+}
+
+# A measuring feature is a property of a unit of measure that
+# describes what quality/feature is being measured by it.
+enum MeasuringFeature {
+  weight
+  volume
+  count
+  length
+  portion
+}
+
+# A bought ingredient is an ingredient that can be bought in a store.
+# It represents the starting ingredients of a recipe, excluding
+# any processed ingredients that are created during the cooking process.
+type BoughtIngredient {
+  typename: String!
+  id: ID!
+  name: String!
+  units: [UnitOfMeasure!]!
+  ontologyUrls: [String!]
+}
+
+# A recipe ingredient is a union type that represents either a bought ingredient or the output
+# or a recipe.
+union Ingredient = BoughtIngredient | Recipe
+
+# A recipe ingredient represents an ingredient used in a recipe, including
+# the quantity and unit of measure.
+type RecipeIngredient {
+  typename: String!
+  id: ID!
+  ingredient: Ingredient!
+  quantity: Float!
+  unit: UnitOfMeasure!
+}
+
+# A unit of measure represents a unit of measurement that can be used to measure
+# the quantity of an ingredient.
+type UnitOfMeasure {
+  typename: String!
+  id: ID!
+  name: String!
+  plural: String
+  measuring: MeasuringFeature!
+  synonyms: [String!]!
+  ontologyUrls: [String!]
+}
+
+# A cooking step represents a step in the cooking process, including a description
+# of the step, the ingredients required, the duration, and the order in which the step
+# should be performed.
+type CookingStep {
+  typename: String!
+  id: ID!
+  process: CookingTechnique!
+  preconditions: [StepPrecondition!]
+  requires: [StepInputIngredient!]!
+  produces: [StepOutputIngredient!]!
+  activeMinutes: Int!
+  inactiveMinutes: Int!
+  semiActiveMinutes: Int!
+}
+
+# A step precondition represents a condition that must be met before a cooking step can be performed.
+type StepPrecondition {
+  typename: String!
+  id: ID!
+  description: String!
+  requiredIngredients: [StepInputIngredient!]!
+}
+
+# An intermediate ingredient is an ingredient that is created during the cooking process
+# and is used as an input to another step in the recipe.
+type StepOutputIngredient {
+  typename: String!
+  id: ID!
+  name: String!
+}
+
+union StepInputIngredientType = RecipeIngredient | StepOutputIngredient
+
+# A process ingredient is an input to a cooking step, and can be either a recipe ingredient
+# or an intermediate ingredient.
+type StepInputIngredient {
+  typename: String!
+  id: ID!
+  prefix: String
+  ingredient: StepInputIngredientType!
+  portionOf: Float
+}
+
+# A cooking technique represents a technique used in the cooking process, including
+# a name and a description of the technique.
+type CookingTechnique {
+  typename: String!
+  id: ID!
+  name: String!
+
+  # Some steps may expect ingredients in a certian order
+  # depending on whether they are something you do to,
+  # use for or other uses.
+  # The empty string represents not using a prefix.
+  # This prefixes are combined with the prrefixes of the StepInputIngredient
+  # to determine the order of the ingredients.
+  inputPrefixesOrder: [String!]
+
+  description: String
+  outputFormatString: String
+  ontologyUrls: [String!]
+}

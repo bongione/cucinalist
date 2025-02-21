@@ -1,0 +1,29 @@
+{
+  "name": "@cucinalist",
+  "version": "0.0.1",
+  "description": "Open platform to store recipes and meals, to then create step-by-step meal plans",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bongione/cucinalist.git"
+  },
+  "keywords": [
+    "cooking",
+    "crowdsourced",
+    "graphql",
+    "typescript",
+    "dsl"
+  ],
+  "author": "Paolo F. Bongiovanni <paolo.bongiovanni@mindiply.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bongione/cucinalist/issues"
+  },
+  "homepage": "https://github.com/bongione/cucinalist#readme",
+  "workspaces": [
+    "packages/*"
+  ]
+}

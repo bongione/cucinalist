@@ -1,0 +1,8 @@
+__generated__/
+.antlr/
+node_modules/
+.vscode/
+__pycache__/
+src/**/*/js
+dist/
+migrations/

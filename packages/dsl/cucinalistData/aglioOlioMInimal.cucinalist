@@ -1,0 +1,50 @@
+
+
+recipe SpaghettiAglioOlioEPeperoncino fullName 'Spaghetti aglio, olio e peperoncino'
+    serves 4
+    ingredients
+        - 500 g spaghetti;
+        - 4 cloves garlic;
+        - 0.5 glasses 'extra virge olive oil';
+        - 1-4 redHotChilliPeppers;
+        - 5 grams salt;
+        - 5l water;
+        - (optional) 2 spoons parmesanCheese;
+    steps
+        - 'bring to the boil' salt and water -[15]-> boiledSaltedWater;
+        - 'chop finely' redHotChilliPeppers -2-> choppedChillies;
+        - 'chop finely' garlic -2-> choppedGarlic;
+        - 'shallow-fry' choppedChillies and choppedGarlic in 'extra virge olive oil' -[20]-> condiment;
+        - when boiledSaltedWater
+            - add spaghetti to boiledSaltedWater -[10]-> cookingPasta;
+        - when cookingPasta 'is tender'
+            - (optional) reserve boiledSaltedWater from cookingPasta -> reservedWater;
+            - drain cookingPasta -> cookedPasta;
+        - combine cookedPasta and condiment -> pastaWithCondiment;
+        - (optional) mix parmesanCheese, pastaWithCondiment  and reservedWater;
+        - serve pastaWithCondiment -> SpaghettiAglioOlioEPeperoncino;
+
+recipe hamSandwich fullName 'Ham sandwich'
+    serves 1
+    ingredients
+        - 2 slices bread;
+        - 1 slice ham;
+        - butter;
+    steps
+        - spread butter on bread -1-> butteredBread;
+        - put ham on butteredBread -1-> sandwich;
+        - serve sandwich -> hamSandwich;
+
+meal tomorrowNight
+    diners 3
+    course starter
+        - hamSandwich;
+    course Main
+        - SpaghettiAglioOlioEPeperoncino;
+
+
+meal tonight
+    diners 6
+    recipes
+        - SpaghettiAglioOlioEPeperoncino;
+

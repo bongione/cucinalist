@@ -1,0 +1,199 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/__generated__/prismaClient"
+}
+
+datasource db {
+  provider = "sqlite"
+  // Prod change url      = env("DATABASE_URL")
+  url      = "file:./dev.db"
+}
+
+model Context {
+  id              String    @id
+  parentContextId String?
+  parentContext   Context?  @relation("ParentContext", fields: [parentContextId], references: [id])
+  chilrenContexts Context[] @relation("ParentContext")
+}
+
+enum EntityType {
+  Recipe
+  StoreBoughtIngredient
+  CookingTechnique
+  UnitOfMeasure
+}
+
+model NamedEntity {
+  contextId  String
+  id         String
+  recordType EntityType
+  recordId   String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@id([contextId, id])
+  @@index([recordId, recordType], name: "ixNamedEntityRecord")
+}
+
+model Recipe {
+  id            String             @id @default(cuid())
+  gblId         String
+  name          String
+  description   String?
+  serves        Int
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  ingredients   RecipeIngredient[] @relation("ingredients")
+  steps         CookingStep[]
+  usedInRecipes RecipeIngredient[] @relation("producedByRecipe")
+
+  @@index([gblId], name: "ixRecipeGblId")
+}
+
+model RecipeIngredient {
+  id                      String  @id @default(cuid())
+  recipeId                String
+  storeBoughtIngredientId String?
+  producedByRecipeId      String?
+  amount                  Float
+  unitOfMeasureId         String
+  nth                     Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  recipe                Recipe                 @relation(fields: [recipeId], references: [id], name: "ingredients")
+  storeBoughtIngredient StoreBoughtIngredient? @relation(fields: [storeBoughtIngredientId], references: [id])
+  producedByRecipe      Recipe?                @relation(fields: [producedByRecipeId], references: [id], name: "producedByRecipe")
+  unitOfMeasure         UnitOfMeasure          @relation(fields: [unitOfMeasureId], references: [id])
+  usedAsInput           StepInputIngredient[]
+}
+
+model CookingStep {
+  id                String                 @id @default(cuid())
+  recipeId          String
+  techniqueId       String
+  activeMinutes     Int?
+  parallelMinutes   Int?
+  keepEyeMinutes    Int?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  recipe            Recipe                 @relation(fields: [recipeId], references: [id])
+  inputIngredients  StepInputIngredient[]
+  outputIngredients StepOutputIngredient[]
+  preconditions     StepPrecondition[]
+  cookingTechnique  CookingTechnique       @relation(fields: [techniqueId], references: [id])
+}
+
+enum MeasuringFeature {
+  unspecified
+  weight
+  volume
+  count
+  length
+  portion
+}
+
+model UnitOfMeasure {
+  id            String                       @id @default(cuid())
+  gblId         String
+  name          String
+  measuring     MeasuringFeature
+  defaultSymbol String?
+  plural        String?
+  synonyms      UnitOfMeasureAcceptedLabel[]
+  ontologyUrl   String?
+  createdAt     DateTime                     @default(now())
+  updatedAt     DateTime                     @updatedAt
+
+  mesuringRecipeIngredients RecipeIngredient[]
+
+  @@index([gblId], name: "ixUnitOFMeasureGblId")
+}
+
+model UnitOfMeasureAcceptedLabel {
+  id              String        @id @default(cuid())
+  unitOfMeasureId String
+  label           String
+  unitOfMeasure   UnitOfMeasure @relation(fields: [unitOfMeasureId], references: [id])
+}
+
+model CookingTechnique {
+  id                 String        @id @default(cuid())
+  gblId              String
+  name               String
+  description        String?
+  inputPrefixesOrder String?
+  outputFormatString String
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  ontologyUrl        String?
+  usedInSteps        CookingStep[]
+
+  @@index([gblId], name: "ixCookingTechniqueGblId")
+}
+
+model StoreBoughtIngredient {
+  id          String  @id @default(cuid())
+  gblId       String
+  name        String
+  description String?
+  ontologyUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  inRecipes RecipeIngredient[]
+
+  @@index([gblId], name: "ixStoreBoughtIngredientGblId")
+}
+
+model StepInputIngredient {
+  id                              String                            @id @default(cuid())
+  cookingStepId                   String
+  nthInput                        Int
+  prefix                          String?
+  portionOf                       Float?
+  outputIngredientId              String?
+  recipeIngredientId              String?
+  cookingStep                     CookingStep                       @relation(fields: [cookingStepId], references: [id])
+  outputIngredient                StepOutputIngredient?             @relation(fields: [outputIngredientId], references: [id])
+  recipeIngredient                RecipeIngredient?                 @relation(fields: [recipeIngredientId], references: [id])
+  StepPrecondition                StepPrecondition?                 @relation(fields: [stepPreconditionId], references: [id])
+  stepPreconditionId              String?
+  StepPreconditionInputIngredient StepPreconditionInputIngredient[]
+}
+
+model StepOutputIngredient {
+  id            String                @id @default(cuid())
+  cookingStepId String
+  nthOutput     Int
+  name          String
+  usedAsInput   StepInputIngredient[]
+  cookingStep   CookingStep           @relation(fields: [cookingStepId], references: [id])
+}
+
+model StepPrecondition {
+  id                              String                            @id @default(cuid())
+  cookingStepId                   String
+  nthPrecondition                 Int
+  description                     String
+  cookingStep                     CookingStep                       @relation(fields: [cookingStepId], references: [id])
+  inputIngredients                StepInputIngredient[]
+  StepPreconditionInputIngredient StepPreconditionInputIngredient[]
+}
+
+model StepPreconditionInputIngredient {
+  stepPreconditionId    String
+  stepInputIngredientId String
+  stepPrecondition      StepPrecondition    @relation(fields: [stepPreconditionId], references: [id])
+  inputIngredient       StepInputIngredient @relation(fields: [stepInputIngredientId], references: [id])
+
+  @@id([stepPreconditionId, stepInputIngredientId])
+}

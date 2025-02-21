@@ -1,0 +1,47 @@
+schema: "./src/cucinalist-schema.graphql"
+
+generates:
+
+  # Specify where our generated types should live.
+  ../web/client/src/__generated__/cucinalist-graphql-types.ts:
+
+    plugins:
+
+      - "typescript"
+
+    config:
+      nonOptionalTypename: true
+
+  ../web/client/src/__generated__/cucinalist-introspection-schema.json:
+    plugins:
+      - introspection
+    config:
+      minify: true
+
+
+  ./src/__generated__/cucinalist-resolvers-types.ts:
+
+    plugins:
+      - "typescript"
+      - "typescript-resolvers"
+
+    config:
+      useIndexSignature: true
+      inputMaybeValue: 'T | undefined'
+
+      # More on this below!
+
+      contextType: "../data/apolloContext#ApolloContext"
+      mapperTypeSuffix: "Tbl"
+      mappers:
+        Recipe: ./prismaClient#Recipe
+        RecipeIngredient: ./prismaClient#RecipeIngredient
+        CookingStep: ./prismaClient#CookingStep
+        BoughtIngredient: ./prismaClient#StoreBoughtIngredient
+        UnitOfMeasure: ./prismaClient#UnitOfMeasure
+        StepPrecondition: ./prismaClient#StepPrecondition
+        StepInputIngredient: ./prismaClient#StepInputIngredient
+        StepOutputIngredient: ./prismaClient#StepOutputIngredient
+        CookingTechnique: ./prismaClient#CookingTechnique
+
+
