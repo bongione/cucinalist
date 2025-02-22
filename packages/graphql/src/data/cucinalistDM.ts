@@ -273,14 +273,14 @@ async function processRecipeSteps(
           await executionContext.prisma.stepPreconditionInputIngredient.create({
             data: {
               stepPreconditionId: stepRecord.id,
-              recipeIngredientId: ingredientRecord.id,
+              stepInputIngredientId: ingredientRecord.id,
             },
           });
         } else if (ingredientRecord.type === "StepOutputIngredient") {
           await executionContext.prisma.stepPreconditionInputIngredient.create({
             data: {
               stepPreconditionId: stepRecord.id,
-              stepOutputIngredientId: ingredientRecord.id,
+              stepInputIngredientId: ingredientRecord.id,
             },
           });
         }

@@ -2,12 +2,11 @@ import { Context, PrismaClient } from "../__generated__/prismaClient";
 import {
   CucinalistNamedDBModel,
   ExecutionContext,
-  ExecutionContextManager, PrismaInTx
-} from './dmlTypes'
+  ExecutionContextManager,
+  PrismaInTx,
+} from "./dmlTypes";
 
-export async function createAndInitExecutionContextManager(
-  prisma: PrismaInTx,
-) {
+export async function createAndInitExecutionContextManager(prisma: PrismaInTx) {
   const cm = new ContextManager(prisma);
   await cm.initialize();
   return cm;
@@ -92,13 +91,17 @@ class SymbolTableContext implements ExecutionContext {
       throw new Error("Cannot assign a context as a symbol");
     }
     const localNamedEntity = await this.resolveLocalSymbolName(id);
-    if (localNamedEntity && localNamedEntity.recordId === model.id && localNamedEntity.recordType === model.type) {
+    if (
+      localNamedEntity &&
+      localNamedEntity.recordId === model.id &&
+      localNamedEntity.recordType === model.type
+    ) {
       return model;
     }
     if (
       localNamedEntity &&
-      localNamedEntity.recordType !== model.type &&
-      localNamedEntity.recordId !== model.id
+      (localNamedEntity.recordType !== model.type ||
+        localNamedEntity.recordId !== model.id)
     ) {
       throw new Error(
         `Cannot reassign id ${id} in the same context with different information`,
@@ -110,7 +113,7 @@ class SymbolTableContext implements ExecutionContext {
         `Cannot assign id "${id}" with different type from an ancestor context`,
       );
     }
-    this.prisma.namedEntity.create({
+    await this.prisma.namedEntity.create({
       data: {
         contextId: this.contextName,
         id,

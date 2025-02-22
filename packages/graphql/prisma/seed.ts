@@ -13,7 +13,7 @@ async function main() {
     where: { id: "public" },
     update: {},
     create: {
-      id: "root",
+      id: "public",
       parentContextId: "root",
     },
   });
