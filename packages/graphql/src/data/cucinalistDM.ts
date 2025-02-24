@@ -292,7 +292,6 @@ async function processRecipeSteps(
   return recipeStepsRecords;
 }
 
-
 export async function processCreateUnitOfMeasureStatement(
   statement: UnitOfMeasure,
   executionContext: ExecutionContext,
@@ -307,30 +306,33 @@ export async function processCreateUnitOfMeasureStatement(
     );
   }
 
-  const unitRecord = await (existingUnit.type === "UnresolvedId"
-    ? executionContext.prisma.unitOfMeasure.create({
-        data: {
-          gblId: statement.id,
-          name: statement.name,
-          measuring:
-            Object.values(MeasuringFeature).findIndex(
-              (f) => statement.measuring === f,
-            ) === -1
-              ? MeasuringFeature.unspecified
-              : (statement.measuring as MeasuringFeature),
-        },
-      })
-    : executionContext.prisma.unitOfMeasure.update({
-        where: { id: statement.id },
-        data: {
-          name: statement.name,
-          measuring: Object.values(MeasuringFeature).findIndex(
-            (f) => statement.measuring === f,
-          ) === -1
-            ? MeasuringFeature.unspecified
-            : (statement.measuring as MeasuringFeature),
-        },
-      }));
+  const p =
+    existingUnit.type === "UnresolvedId"
+      ? executionContext.prisma.unitOfMeasure.create({
+          data: {
+            gblId: statement.id,
+            name: statement.name,
+            measuring:
+              Object.values(MeasuringFeature).findIndex(
+                (f) => statement.measuring === f,
+              ) === -1
+                ? MeasuringFeature.unspecified
+                : (statement.measuring as MeasuringFeature),
+          },
+        })
+      : executionContext.prisma.unitOfMeasure.update({
+          where: { id: statement.id },
+          data: {
+            name: statement.name,
+            measuring:
+              Object.values(MeasuringFeature).findIndex(
+                (f) => statement.measuring === f,
+              ) === -1
+                ? MeasuringFeature.unspecified
+                : (statement.measuring as MeasuringFeature),
+          },
+        });
+  const unitRecord = await p;
   const fullRecord = { type: "UnitOfMeasure" as const, ...unitRecord };
   await executionContext.assignSymbol(statement.id, fullRecord);
   return fullRecord;

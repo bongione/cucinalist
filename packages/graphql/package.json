@@ -29,7 +29,7 @@
   "dependencies": {
     "@apollo/server": "^4.11.3",
     "@cucinalist/dsl": "*",
-    "@prisma/client": "^6.4.0",
+    "@prisma/client": "^6.4.1",
     "apollo-server": "^3.13.0",
     "dataloader": "^2.2.3",
     "graphql": "^16.10.0",

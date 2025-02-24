@@ -1,10 +1,8 @@
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
-import { PrismaClient, UnitOfMeasure } from "../src/__generated__/prismaClient";
+import { PrismaClient, UnitOfMeasure, MeasuringFeature } from "../src/__generated__/prismaClient";
 import { resetTestDB } from "../src/__generated__/prismaClient/sql";
 import { createAndInitExecutionContextManager } from "../src/data/executionContext";
 import { TypedModel } from "../src/data/dmlTypes";
-import { MeasuringFeature } from "@prisma/client";
-
 const prisma = new PrismaClient();
 
 beforeAll(async () => {

@@ -12,7 +12,7 @@ export async function executeDML(prismaClient: PrismaClient, dmlStr: string) {
   const statements = parseCucinalistDsl(dmlStr);
   const newOrUpdatedEntities: CucinalistNamedDBModel[] = [];
 
-  prismaClient.$transaction(async (prisma) => {
+  await prismaClient.$transaction(async (prisma) => {
     const executionContext = await createAndInitExecutionContextManager(prisma);
     for (const statement of statements) {
       if (statement.type === "CreateContext") {
