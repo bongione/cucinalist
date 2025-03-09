@@ -5,10 +5,14 @@ import { CucinalistWalker } from "./cucinalistWalker";
 import { readFile } from "node:fs/promises";
 import { CucinalistDMLStatement, IncludeStatement } from "./semanticModel";
 import { dirname, join } from "node:path";
+import {
+  CucinalistSemanticTokenWalker,
+  ParsedToken,
+} from "./cucinalistSemanticTokenWalker";
 
 export async function parseCucinalistDslFile(
   baseDir: string,
-  dslFilename: string,
+  dslFilename: string
 ) {
   const initialFilename = join(baseDir, dslFilename);
   const initialDir = dirname(initialFilename);
@@ -17,26 +21,26 @@ export async function parseCucinalistDslFile(
   const statements = parseCucinalistDsl(data);
   for (
     let nextIncludeIndex = statements.findIndex(
-      (s) => s.type === "IncludeStatement",
+      (s) => s.type === "IncludeStatement"
     );
     nextIncludeIndex !== -1;
     nextIncludeIndex = statements.findIndex(
-      (s) => s.type === "IncludeStatement",
+      (s) => s.type === "IncludeStatement"
     )
   ) {
     console.log(
       "Processing include statement",
-      JSON.stringify(statements[nextIncludeIndex], null, 2),
+      JSON.stringify(statements[nextIncludeIndex], null, 2)
     );
     console.log(
-      `Parsing file ${join(initialDir, (statements[nextIncludeIndex] as IncludeStatement).fileToInclude)}`,
+      `Parsing file ${join(initialDir, (statements[nextIncludeIndex] as IncludeStatement).fileToInclude)}`
     );
     const includeData = await readFile(
       join(
         initialDir,
-        (statements[nextIncludeIndex] as IncludeStatement).fileToInclude,
+        (statements[nextIncludeIndex] as IncludeStatement).fileToInclude
       ),
-      "utf8",
+      "utf8"
     );
     const includeStatements = parseCucinalistDsl(includeData);
     statements.splice(nextIncludeIndex, 1, ...includeStatements);
@@ -53,4 +57,15 @@ export function parseCucinalistDsl(cucinalistDslString: string) {
   const walker = new CucinalistWalker();
   ParseTreeWalker.DEFAULT.walk(walker, tree);
   return walker.statements;
+}
+
+export function parseCucinalistSemanticTokensDsl(cucinalistDslString: string) {
+  const chars = new CharStream(cucinalistDslString);
+  const lexer = new CucinalistLexer(chars);
+  const tokens = new CommonTokenStream(lexer);
+  const parser = new CheffieParser(tokens);
+  const tree = parser.program();
+  const walker = new CucinalistSemanticTokenWalker();
+  ParseTreeWalker.DEFAULT.walk(walker, tree);
+  return walker.semantiTokens;
 }

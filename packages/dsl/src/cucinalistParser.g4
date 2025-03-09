@@ -38,7 +38,12 @@ idList: id (COMMA id)* (AND id)?;
 
 id: quotedString | unquotedString;
 
-unitOfMeasure: UNITOFMEASURE name=id LCURLY MEASURING measuring=id DEFAULTSYMBOL  (defaultSymbol=string)? (PLURAL plural=string)? (AKA akaList=stringList)? RCURLY;
+unitOfMeasure: UNITOFMEASURE name=id LCURLY
+    MEASURING measuring=id
+    DEFAULTSYMBOL  (defaultSymbol=string)?
+    (PLURAL plural=string)?
+    (AKA akaList=stringList)?
+RCURLY;
 stringList: string (COMMA string)*;
 string: unquotedString | quotedString;
 

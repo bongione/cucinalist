@@ -1,5 +1,5 @@
 import { Recipe, UnitOfMeasure } from "@cucinalist/dsl";
-import { ExecutionContext, TypedModel } from "./dmlTypes";
+import { CucinalistModels, ExecutionContext } from "./dmlTypes";
 import {
   CookingStep,
   MeasuringFeature,
@@ -11,8 +11,8 @@ import {
 interface RecipeExecutionContext extends ExecutionContext {
   readonly localResolutions: Map<
     Object,
-    | TypedModel<RecipeIngredient, "RecipeIngredient">
-    | TypedModel<StepOutputIngredient, "StepOutputIngredient">
+    | CucinalistModels["RecipeIngredient"]
+    | CucinalistModels["StepOutputIngredient"]
   >;
 }
 
@@ -29,9 +29,11 @@ export async function processRecipeStatement(
   recipe: Recipe,
   executionContext: ExecutionContext,
 ) {
-  const existingRecord = await executionContext.resolveSymbol(recipe.id, true);
+  const existingRecord = await executionContext.localResolveSymbol(recipe.id, [
+    "Recipe",
+  ]);
 
-  const recipeRecord = await (existingRecord.type === "UnresolvedId"
+  const recipeRecord = await (existingRecord === null
     ? executionContext.prisma.recipe.create({
         data: {
           name: recipe.name,
@@ -58,7 +60,11 @@ export async function processRecipeStatement(
     type: "Recipe" as const,
     ...recipeRecord,
   };
-  await executionContext.assignSymbol(recipe.id, completedRecord);
+  await executionContext.assignSymbol(
+    recipe.id,
+    completedRecord.type,
+    completedRecord.id,
+  );
   const rContext = recipeContext(executionContext);
   await processRecipeIngredients(rContext, recipe, recipeRecord);
   await processRecipeSteps(rContext, recipe, recipeRecord);
@@ -85,7 +91,8 @@ async function findOrCreateStoreBoughtIngredient(
     };
     await executionContext.assignSymbol(
       ingredientId,
-      recipeOrStoreBoughtIngredient,
+      recipeOrStoreBoughtIngredient.type,
+      recipeOrStoreBoughtIngredient.id,
     );
   } else if (
     recipeOrStoreBoughtIngredient.type !== "StoreBoughtIngredient" &&
@@ -104,17 +111,18 @@ async function findOrCreateUnitOfMeasure(
 ) {
   let unitOfMeasure = await executionContext.resolveSymbol(unitId);
   if (unitOfMeasure.type === "UnresolvedId") {
-    const newUnitOfMeasure = await executionContext.prisma.unitOfMeasure.create(
-      {
-        data: {
-          gblId: unitId,
-          name: unitId,
-          measuring: "unspecified",
-        },
+    const unitOfMeasure = await executionContext.prisma.unitOfMeasure.create({
+      data: {
+        gblId: unitId,
+        name: unitId,
+        measuring: "unspecified",
       },
+    });
+    await executionContext.assignSymbol(
+      unitId,
+      unitOfMeasure.type,
+      unitOfMeasure.id,
     );
-    unitOfMeasure = { type: "UnitOfMeasure", ...newUnitOfMeasure };
-    await executionContext.assignSymbol(unitId, unitOfMeasure);
   } else if (unitOfMeasure.type !== "UnitOfMeasure") {
     throw new TypeError(`The id ${unitId} is not a unit of measure`);
   }
@@ -127,15 +135,18 @@ async function findOrCreateCookingTechnique(
 ) {
   let technique = await executionContext.resolveSymbol(techniqueId);
   if (technique.type === "UnresolvedId") {
-    const newTechnique = await executionContext.prisma.cookingTechnique.create({
+    const technique = await executionContext.prisma.cookingTechnique.create({
       data: {
         gblId: techniqueId,
         name: techniqueId,
         outputFormatString: `${techniqueId}ed {*INGREDIENTS*}`,
       },
     });
-    technique = { type: "CookingTechnique", ...newTechnique };
-    await executionContext.assignSymbol(techniqueId, technique);
+    await executionContext.assignSymbol(
+      techniqueId,
+      technique.type,
+      technique.id,
+    );
   } else if (technique.type !== "CookingTechnique") {
     throw new TypeError(`The id ${techniqueId} is not a cooking technique`);
   }
@@ -296,22 +307,22 @@ export async function processCreateUnitOfMeasureStatement(
   statement: UnitOfMeasure,
   executionContext: ExecutionContext,
 ) {
-  const existingUnit = await executionContext.resolveSymbol(statement.id, true);
-  if (
-    existingUnit.type !== "UnresolvedId" &&
-    existingUnit.type !== "UnitOfMeasure"
-  ) {
+  const existingUnit = await executionContext.localResolveSymbol(statement.id, [
+    "UnitOfMeasure",
+  ]);
+  if (existingUnit !== null && existingUnit.type !== "UnitOfMeasure") {
     throw new Error(
       `Symbol ${statement.id} already exists and is not a UnitOfMeasure`,
     );
   }
 
   const p =
-    existingUnit.type === "UnresolvedId"
+    existingUnit === null
       ? executionContext.prisma.unitOfMeasure.create({
           data: {
             gblId: statement.id,
             name: statement.name,
+            plural: statement.symbolPlural ? statement.symbolPlural : undefined,
             measuring:
               Object.values(MeasuringFeature).findIndex(
                 (f) => statement.measuring === f,
@@ -321,9 +332,16 @@ export async function processCreateUnitOfMeasureStatement(
           },
         })
       : executionContext.prisma.unitOfMeasure.update({
-          where: { id: statement.id },
+          where: { id: existingUnit.id },
           data: {
             name: statement.name,
+            defaultSymbol: statement.defaultSymbol
+              ? statement.defaultSymbol
+              : statement.name,
+            plural: statement.symbolPlural ? statement.symbolPlural : null,
+            synonyms: {
+              deleteMany: {},
+            },
             measuring:
               Object.values(MeasuringFeature).findIndex(
                 (f) => statement.measuring === f,
@@ -332,8 +350,20 @@ export async function processCreateUnitOfMeasureStatement(
                 : (statement.measuring as MeasuringFeature),
           },
         });
+
   const unitRecord = await p;
-  const fullRecord = { type: "UnitOfMeasure" as const, ...unitRecord };
-  await executionContext.assignSymbol(statement.id, fullRecord);
-  return fullRecord;
+  for (const label of statement.aka ? statement.aka : []) {
+    await executionContext.prisma.unitOfMeasureAcceptedLabel.create({
+      data: {
+        unitOfMeasureId: unitRecord.id,
+        label,
+      },
+    });
+  }
+  await executionContext.assignSymbol(
+    statement.id,
+    unitRecord.type,
+    unitRecord.id,
+  );
+  return unitRecord;
 }

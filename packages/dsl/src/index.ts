@@ -1,2 +1,6 @@
-export * from './semanticModel';
-export {parseCucinalistDsl, parseCucinalistDslFile} from './parseDML';
+export * from "./semanticModel";
+export {
+  parseCucinalistDsl,
+  parseCucinalistDslFile,
+  parseCucinalistSemanticTokensDsl,
+} from "./parseDML";

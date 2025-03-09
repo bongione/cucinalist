@@ -1,16 +1,16 @@
-import { PrismaClient } from "../__generated__/prismaClient";
+import type { PrismaClient } from "./dao/extendedPrisma";
 import {
   CreateContext,
   parseCucinalistDsl,
   SwitchToContext,
 } from "@cucinalist/dsl";
 import { createAndInitExecutionContextManager } from "./executionContext";
-import { CucinalistNamedDBModel, ExecutionContextManager } from "./dmlTypes";
+import {AssignableModels, ExecutionContextManager} from './dmlTypes'
 import {processCreateUnitOfMeasureStatement, processRecipeStatement} from './cucinalistDM'
 
 export async function executeDML(prismaClient: PrismaClient, dmlStr: string) {
   const statements = parseCucinalistDsl(dmlStr);
-  const newOrUpdatedEntities: CucinalistNamedDBModel[] = [];
+  const newOrUpdatedEntities: AssignableModels[keyof AssignableModels][] = [];
 
   await prismaClient.$transaction(async (prisma) => {
     const executionContext = await createAndInitExecutionContextManager(prisma);

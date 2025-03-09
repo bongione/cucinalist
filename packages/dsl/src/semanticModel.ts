@@ -1,6 +1,6 @@
 /**
- * THis is the semantic model of data entered to model meals and recipes
- * in Cucinalist via its DSL.
+ * THis is the abstract syntax model of data entered to model meals and recipes
+ * in Cucinalist's DSL.
  *
  * Wherever there is an ID field, this refers to a global symbol table, that points
  * to recipes, ingredients, output of cooking steps and units of measure.
@@ -11,8 +11,9 @@ export interface UnitOfMeasure {
   type: "UnitOfMeasure";
   id: string;
   name: string;
+  defaultSymbol: string;
+  symbolPlural?: string;
   measuring: string;
-  plural?: string;
   aka?: string[];
 }
 

@@ -1,6 +1,6 @@
-import { Context, PrismaClient } from "../__generated__/prismaClient";
+import { Context } from "../__generated__/prismaClient";
 import {
-  CucinalistNamedDBModel,
+  AssignableModels,
   ExecutionContext,
   ExecutionContextManager,
   PrismaInTx,
@@ -9,13 +9,13 @@ import {
 export async function createAndInitExecutionContextManager(prisma: PrismaInTx) {
   const cm = new ContextManager(prisma);
   await cm.initialize();
-  return cm;
+  return cm as ExecutionContextManager;
 }
 
 function createSymbolsContext(
   prisma: PrismaInTx,
   contextName: string,
-  parentContext: ExecutionContext | null,
+  parentContext: ExecutionContext | null
 ): ExecutionContext {
   return new SymbolTableContext(prisma, contextName, parentContext);
 }
@@ -28,7 +28,7 @@ class SymbolTableContext implements ExecutionContext {
   constructor(
     prisma: PrismaInTx,
     contextName: string,
-    parentContext: ExecutionContext | null,
+    parentContext: ExecutionContext | null
   ) {
     this.contextName = contextName;
     this.parentCtx = parentContext;
@@ -64,65 +64,81 @@ class SymbolTableContext implements ExecutionContext {
     return null;
   }
 
-  resolveSymbol = async (id: string, restrictToLocalCtx = false) => {
+  async resolveSymbol(id, expectedTypes) {
+    let r = await this.localResolveSymbol(id, expectedTypes);
+    if (r) {
+      return r;
+    } else {
+      if (this.parentCtx) {
+        return this.parentCtx.resolveSymbol(id);
+      } else {
+        return {
+          type: "UnresolvedId" as const,
+          id,
+        };
+      }
+    }
+  }
+
+  async localResolveSymbol(id, expectedTypes) {
     let r = await this.prisma.namedEntity.findUnique({
       where: {
         contextId_id: { contextId: this.contextName, id },
       },
     });
     if (r) {
-      const e = (await this.prisma[r.recordType].findUnique({
+      return this.prisma[r.recordType].findUnique({
         where: { id: r.recordId },
-      })) as Omit<CucinalistNamedDBModel, "type">;
-      return { ...e, type: r.recordType } as CucinalistNamedDBModel;
+      });
     }
-    if (!restrictToLocalCtx && this.parentCtx) {
-      return this.parentCtx.resolveSymbol(id);
-    } else {
-      return {
-        type: "UnresolvedId" as const,
-        id,
-      };
-    }
-  };
+    return null;
+  }
 
-  assignSymbol = async (id: string, model: CucinalistNamedDBModel) => {
-    if (model.type === "Context") {
+  async assignSymbol(id, recordType, recordId) {
+    if (recordType === "Context") {
       throw new Error("Cannot assign a context as a symbol");
     }
     const localNamedEntity = await this.resolveLocalSymbolName(id);
     if (
       localNamedEntity &&
-      localNamedEntity.recordId === model.id &&
-      localNamedEntity.recordType === model.type
+      localNamedEntity.recordId === recordId &&
+      localNamedEntity.recordType === recordType
     ) {
-      return model;
+      return id;
     }
     if (
       localNamedEntity &&
-      (localNamedEntity.recordType !== model.type ||
-        localNamedEntity.recordId !== model.id)
+      (localNamedEntity.recordType !== recordType ||
+        localNamedEntity.recordId !== recordId)
     ) {
       throw new Error(
-        `Cannot reassign id ${id} in the same context with different information`,
+        `Cannot reassign id ${id} in the same context with different information`
       );
     }
     const parentModel = await this.resolveAncestorSymbol(id);
-    if (parentModel && parentModel.type !== model.type) {
+    if (parentModel && parentModel.type !== recordType) {
       throw new Error(
-        `Cannot assign id "${id}" with different type from an ancestor context`,
+        `Cannot assign id "${id}" with different type from an ancestor context`
       );
     }
     await this.prisma.namedEntity.create({
       data: {
         contextId: this.contextName,
         id,
-        recordType: model.type,
-        recordId: model.id,
+        recordType,
+        recordId,
       },
     });
-    return model;
-  };
+    return id;
+  }
+
+  async localUnassignSymbol(id) {
+    await this.prisma.namedEntity.delete({
+      where: {
+        contextId_id: { contextId: this.contextName, id },
+      },
+    });
+  }
 }
 
 class ContextManager implements ExecutionContextManager {
@@ -152,7 +168,7 @@ class ContextManager implements ExecutionContextManager {
     ]);
     if (baseContexts.some((c) => !c)) {
       throw new Error(
-        "Root and public contexts must be created before executing DML",
+        "Root and public contexts must be created before executing DML"
       );
     }
     this.contextsMap.set("root", {
@@ -164,7 +180,7 @@ class ContextManager implements ExecutionContextManager {
       executionContext: createSymbolsContext(
         this.prisma,
         "public",
-        this.contextsMap.get("root")!.executionContext,
+        this.contextsMap.get("root")!.executionContext
       ),
     });
     this.currentContextId = "public";
@@ -187,11 +203,21 @@ class ContextManager implements ExecutionContextManager {
     return this._prisma;
   }
 
-  assignSymbol = async (id: string, model: CucinalistNamedDBModel) =>
-    this.currentContext.assignSymbol(id, model);
+  async assignSymbol(id, recordType, recordId) {
+    return this.currentContext.assignSymbol(id, recordType, recordId);
+  }
 
-  resolveSymbol = async (id: string, restrictToLocalCtx = false) =>
-    this.currentContext.resolveSymbol(id, restrictToLocalCtx);
+  async resolveSymbol<K extends keyof AssignableModels>(id: string, expectedTypes: K[] = []) {
+    return this.currentContext.resolveSymbol(id, expectedTypes);
+  }
+
+  async localResolveSymbol<K extends keyof AssignableModels>(id: string, expectedTypes: K[] = []) {
+    return this.currentContext.localResolveSymbol(id, expectedTypes);
+  }
+
+  async localUnassignSymbol(id) {
+    return this.currentContext.localUnassignSymbol(id);
+  }
 
   /**
    * Creates a new context, and optionally switches to it. If the ancestors context aren't loaded yet,
@@ -203,7 +229,7 @@ class ContextManager implements ExecutionContextManager {
   public async createCucinalistContext(
     id: string,
     parentId: string,
-    switchToContext = false,
+    switchToContext = false
   ) {
     if (!this.initialised) {
       throw new Error("Context manager not initialised");
@@ -223,13 +249,13 @@ class ContextManager implements ExecutionContextManager {
       executionContext: createSymbolsContext(
         this.prisma,
         id,
-        parentContext.executionContext,
+        parentContext.executionContext
       ),
     });
     if (switchToContext) {
       this.currentContextId = id;
     }
-    return this;
+    return this as ExecutionContext;
   }
 
   public async switchToContext(id: string) {
@@ -241,7 +267,7 @@ class ContextManager implements ExecutionContextManager {
       throw new Error(`Context ${id} not found`);
     }
     this.currentContextId = id;
-    return this.currentContext;
+    return this.currentContext as ExecutionContext;
   }
 
   private async getAndPopulateAncestors(id: string, i = 0) {
@@ -256,14 +282,14 @@ class ContextManager implements ExecutionContextManager {
     }
     const parentContext = await this.getAndPopulateAncestors(
       context.parentContextId,
-      i + 1,
+      i + 1
     );
     this.contextsMap.set(id, {
       contextRecord: context,
       executionContext: createSymbolsContext(
         this.prisma,
         id,
-        parentContext.executionContext,
+        parentContext.executionContext
       ),
     });
     return this.contextsMap.get(id)!;

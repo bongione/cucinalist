@@ -1,0 +1,35 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "cucinalist",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [{
+				"name": "keyword.control.cucinalist",
+				"match": "\\b([Rr][Ee][Cc][Ii][Pp][Ee]|[Uu][Nn][Ii][Tt][Oo][Ff][Mm][Ee][Aa][Ss][Uu][Rr][Ee]|[Mm][Ee][Aa][Ll]|[Ii][Nn][Cc][Ll][Uu][Dd][Ee]|[Cc][Rr][Ee][Aa][Tt][Ee] [Cc][Oo][Nn][Tt][Ee][Xx][Tt]( [Aa][Nn][Dd] [Ss][Ww][Ii][Tt][Cc][Hh])?|[Cc][Oo][Nn][Tt][Ee][Xx][Tt])\\b"
+			}, {
+				"name": "keyword.other.cucinalist",
+				"match": "\\b([Ss][Ee][Rr][Vv][Ee][Ss]|[Ii][Nn][Gg][Rr][Ee][Dd][Ii][Ee][Nn][Tt][Ss]|[Ss][Tt][Ee][Pp][Ss]|[Ff][Uu][Ll][Ll][Nn][Aa][Mm][Ee]|[Dd][Ii][Nn][Ee][Rr][Ss]|[Cc][Oo][Uu][Rr][Ss][Ee]|[Rr][Ee][Cc][Ii][Pp][Ee][Ss]|[Ww][Hh][Ee][Nn]|[Mm][Ee][Aa][Ss][Uu][Rr][Ii][Nn][Gg]|[Dd][Ee][Ff][Aa][Uu][Ll][Tt][Ss][Yy][Mm][Bb][Oo][Ll]|[Aa][Kk][Aa]|[Pp][Ll][Uu][Rr][Aa][Ll])\\b"
+			}]
+		},
+		"strings": {
+			"name": "string.quoted.double.cucinalist",
+			"begin": "'",
+			"end": "'",
+			"patterns": [
+				{
+					"name": "constant.character.escape.cucinalist",
+					"match": "\\\\."
+				}
+			]
+		}
+	},
+	"scopeName": "source.cucinalist"
+}

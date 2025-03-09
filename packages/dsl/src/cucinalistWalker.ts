@@ -251,10 +251,11 @@ export class CucinalistWalker extends CucinalistListener {
     const defaultNode = ctx._defaultSymbol;
     const unitOfMeasure: UnitOfMeasure = {
       type: "UnitOfMeasure",
-      name: defaultNode ? this._ctxValues.get(defaultNode) as string : this._ctxValues.get(ctx._name) as string,
+      name: this._ctxValues.get(ctx._name) as string,
+      defaultSymbol: defaultNode ? this._ctxValues.get(defaultNode) as string : this._ctxValues.get(ctx._name) as string,
       id: this._ctxValues.get(ctx._name) as string,
       measuring: this._ctxValues.get(ctx._measuring) as string,
-      plural: ctx._plural ? this._ctxValues.get(ctx._plural) as string : undefined,
+      symbolPlural: ctx._plural ? this._ctxValues.get(ctx._plural) as string : undefined,
       aka: ctx._akaList ? (this._ctxValues.get(ctx._akaList) as string[]) : [],
     };
     this._ctxValues.set(ctx, unitOfMeasure);

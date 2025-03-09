@@ -1,7 +1,7 @@
-import {PrismaClient} from '../__generated__/prismaClient'
+import type {PrismaClient} from './dao/extendedPrisma'
 import {ExecutionContext} from './dmlTypes'
 
-export const prisma = new PrismaClient()
+export {prisma} from './dao/extendedPrisma';
 
 export interface ApolloContext {
   prisma: PrismaClient;

@@ -1,5 +1,7 @@
 lexer grammar cucinalistLexer;
 
+SINGLE_LINE_COMMENT: '//' ~[\r\n]* -> skip;
+MULTI_LINE_COMMENT: '/*' .*? '*/' -> skip;
 WS: [ \t\n\r]+ -> skip;
 INT: DIGIT+;
 FLOAT: INT '.' INT;
