@@ -4,3 +4,4 @@ export {
   parseCucinalistDslFile,
   parseCucinalistSemanticTokensDsl,
 } from "./parseDML";
+export type {ParsedToken} from "./cucinalistSemanticTokenWalker";

@@ -27,9 +27,9 @@ steps: STEPS recipeStepLine+;
 recipeStepLine: condition? cookingStep;
 condition: DASH WHEN whenCondition (COMMA whenCondition)*;
 whenCondition: id string?;
-cookingStep: DASH OPTIONAL? action=id sourceIngredients=idList
+cookingStep: stepStart=DASH OPTIONAL? action=id sourceIngredients=idList
     (FROM sourceOfStep=id)? ((TO|ON) targetOfStep=id)? (IN mediumOfStep=id)?
-    (( DASH activeMinutes=INT RA
+    (( activeDash=DASH activeMinutes=INT RA
     | RA
     | RA_PARALLEL_TIME_LEFT parallellMinutes=INT RA_PARALLEL_TIME_RIGHT
     | RA_KEEPYE_TIME_LEFT keepEyelMinutes=INT RA_KEEPYE_TIME_RIGHT

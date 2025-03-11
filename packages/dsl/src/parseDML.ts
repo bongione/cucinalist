@@ -6,8 +6,7 @@ import { readFile } from "node:fs/promises";
 import { CucinalistDMLStatement, IncludeStatement } from "./semanticModel";
 import { dirname, join } from "node:path";
 import {
-  CucinalistSemanticTokenWalker,
-  ParsedToken,
+  CucinalistSemanticTokenWalker
 } from "./cucinalistSemanticTokenWalker";
 
 export async function parseCucinalistDslFile(

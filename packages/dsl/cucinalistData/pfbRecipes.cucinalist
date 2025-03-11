@@ -22,7 +22,7 @@ recipe SpaghettiAglioOlioEPeperoncino fullName 'Spaghetti aglio, olio e peperonc
         - (optional) mix parmesanCheese, pastaWithCondiment  and reservedWater;
         - serve pastaWithCondiment -> SpaghettiAglioOlioEPeperoncino;
 
-recipe hamSandwich fullName 'Ham sandwich'
+recipe 'Ham sandwich' fullName 'Ham sandwich'
     serves 1
     ingredients
         - 2 slices bread;

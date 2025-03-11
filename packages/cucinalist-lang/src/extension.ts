@@ -65,6 +65,7 @@ class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensPro
 	}
 
 	private _parseText(text: string): IParsedToken[] {
-        return parseCucinalistSemanticTokensDsl(text);
+		const allTokens = parseCucinalistSemanticTokensDsl(text);
+        return allTokens;
 	}
 }
