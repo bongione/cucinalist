@@ -10,6 +10,34 @@
     "Programming Languages"
   ],
   "contributes": {
+    "configurationDefaults": {
+      "editor.semanticTokenColorCustomizations": {
+        "[*Light*]": {
+          "enabled": true,
+          "rules": {
+            "reference": "#4a4a4a",
+            "reference.recipe": "#2222A5",
+            "reference.ingredient": "#229922",
+            "reference.unitOfMeasure": "#333377",
+            "reference.cookingMethod": "#A12222",
+            "reference.internal": "#556655"
+          }
+        },
+        "[*Dark*]": {
+          "enabled": true,
+          "rules": {
+            "reference": "#a4a4a4",
+            "reference.recipe": "#2222A5",
+            "reference.ingredient": "#55CC55",
+            "reference.unitOfMeasure": "#6666EE",
+            "reference.cookingMethod": "#A12222",
+            "reference.internal": "#999999",
+            "reference.internal.ingredient": "#88BB88",
+            "variable.declaration.ingredient": "#229922"
+          }
+        }
+      }
+    },
     "languages": [
       {
         "id": "cucinalist",
@@ -28,6 +56,43 @@
         "language": "cucinalist",
         "scopeName": "source.cucinalist",
         "path": "./syntaxes/cucinalist.tmLanguage.json"
+      }
+    ],
+    "semanticTokenTypes": [
+      {
+        "id": "reference",
+        "superType": "variable",
+        "description": "A reference by name to an existing record"
+      }
+    ],
+    "semanticTokenModifiers": [
+      {
+        "id": "recipe",
+        "description": "Applies to references to recipes"
+      },
+      {
+        "id": "ingredient",
+        "description": "Applies to references to ingredients"
+      },
+      {
+        "id": "unitOfMeasure",
+        "description": "Applies to references to units of measure"
+      },
+      {
+        "id": "cookingMethod",
+        "description": "Applies to references to cooking methods"
+      }
+    ],
+    "semanticTokenScopes": [
+      {
+        "language": "cucinalist",
+        "scopes": {
+          "reference": ["entity.name.tag"],
+          "reference.recipe": ["entity.name.tag.recipe"],
+          "reference.ingredient":  ["entity.name.tag.ingredient"],
+          "reference.unitOfMeasure":  ["entity.name.tag.unitOfMeasure"],
+          "reference.cookingMethod": ["entity.name.tag.cookingMethod"]
+        }
       }
     ]
   },

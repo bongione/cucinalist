@@ -21,15 +21,18 @@ export interface RecipeIngredient {
   type: "RecipeIngredient";
   /** Could be either a recipe or a store bought ingredient */
   ingredientId: string;
+  isOptional?: boolean;
   amount: {
     value: number;
     unit: string;
   };
 }
 
+export type StepInput = RecipeIngredient | CookingStepOutput;
+
 export interface StepPrecondition {
   /** Could be either a recipe or a store bought ingredient */
-  ingredientsNeeded: Array<RecipeIngredient | CookingStepOutput>;
+  ingredientsNeeded: StepInput[];
   conditionDescription?: string;
 }
 
@@ -42,14 +45,15 @@ export interface CookingStep {
   type: "CookingStep";
   processId: string;
   preconditions: StepPrecondition[];
-  ingredients: Array<RecipeIngredient | CookingStepOutput>;
-  source?: RecipeIngredient | CookingStepOutput;
-  target?: RecipeIngredient | CookingStepOutput;
-  medium?: RecipeIngredient | CookingStepOutput;
+  ingredients: StepInput[];
+  source?: StepInput;
+  target?: StepInput;
+  medium?: StepInput;
   activeMinutes: number;
   keepAnEyeMinutes: number;
   inactiveMinutes: number;
   produces: CookingStepOutput[];
+  isOptional?: boolean;
 }
 
 export interface Recipe {
@@ -109,3 +113,6 @@ export type CucinalistDMLStatement =
   | CreateContext
   | IncludeStatement
   | SwitchToContext;
+
+
+export type CucinalistDslAST = CucinalistDMLStatement[];

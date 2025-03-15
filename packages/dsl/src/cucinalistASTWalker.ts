@@ -9,20 +9,30 @@ import {
   StepPrecondition,
   UnitOfMeasure,
   type Recipe,
-  CookingStepOutput, CreateContext, IncludeStatement, SwitchToContext
-} from './semanticModel'
+  CookingStepOutput,
+  CreateContext,
+  IncludeStatement,
+  SwitchToContext,
+  CucinalistDslAST,
+} from "./ASTModel";
 import {
+  ActiveMinutesTransitionContext,
   AmountRangeContext,
-  ConditionContext, ContextContext,
+  ConditionContext,
+  ContextContext,
   CookingStepContext,
-  CourseContext, CreateContextContext,
-  FloatAmountContext, IdContext,
+  CourseContext,
+  CreateContextContext,
+  FloatAmountContext,
+  IdContext,
   IdListContext,
   IncludeContext,
   IngredientLineContext,
   IngredientsContext,
   IntAmountContext,
+  KeepEyelMinutesTransitionContext,
   MealContext,
+  ParallellMinutesTransitionContext,
   ProgramContext,
   QuotedStringContext,
   RangeContext,
@@ -30,30 +40,33 @@ import {
   RecipeLineContext,
   RecipeStepLineContext,
   ServingContext,
-  SingleNumberContext, StatementContext,
-  StepsContext, StringContext, StringListContext,
-  UnitOfMeasureContext, UnquotedStringContext,
-  WhenConditionContext
-} from './__generated__/cucinalistParser'
+  SingleMinuteTransitionContext,
+  SingleNumberContext,
+  StatementContext,
+  StepsContext,
+  StringContext,
+  StringListContext,
+  UnitOfMeasureContext,
+  UnquotedStringContext,
+  WhenConditionContext,
+} from "./__generated__/cucinalistParser";
 
-type SymbolTableValue = string | Recipe | RecipeIngredient | CookingStepOutput;
-
-interface ContextSymbolTable {
-  resolve: (id: string) => SymbolTableValue | null;
-  assignId: (id: string, value: SymbolTableValue) => void;
-}
+type TransitionData = Pick<
+  CookingStep,
+  "activeMinutes" | "inactiveMinutes" | "keepAnEyeMinutes"
+>;
 
 /**
  * This walker requires two passes to populate a symbol table on the first
  * pass. It will thereafter populate all the other symbols
  */
-export class CucinalistWalker extends CucinalistListener {
+export class CucinalistASTWalker extends CucinalistListener {
   private _ctxValues: Map<Object, unknown> = new Map();
   private _ingredientIdPointerMap: Map<
     string,
     RecipeIngredient | CookingStepOutput
   > = new Map();
-  private _statements: CucinalistDMLStatement[] = [];
+  private _statements: CucinalistDslAST = [];
   private _walked: boolean = false;
 
   public get statements() {
@@ -79,7 +92,9 @@ export class CucinalistWalker extends CucinalistListener {
 
   exitProgram = (ctx: ProgramContext) => {
     for (const statementCtx of ctx.statement_list()) {
-      this._statements.push(this._ctxValues.get(statementCtx) as CucinalistDMLStatement);
+      this._statements.push(
+        this._ctxValues.get(statementCtx) as CucinalistDMLStatement,
+      );
     }
     this._ctxValues.set(ctx, this._statements);
     this._walked = true;
@@ -87,24 +102,27 @@ export class CucinalistWalker extends CucinalistListener {
 
   exitStatement = (ctx: StatementContext) => {
     this._ctxValues.set(ctx, this._ctxValues.get(ctx.getChild(0)));
-  }
+  };
 
   exitContext = (ctx: ContextContext) => {
     const contextStatement: SwitchToContext = {
       type: "SwitchToContext",
-      id: this._ctxValues.get(ctx._contextId) as string
-    }
+      id: this._ctxValues.get(ctx._contextId) as string,
+    };
     this._ctxValues.set(ctx, contextStatement);
-  }
+  };
 
   exitCreateContext = (ctx: CreateContextContext) => {
     const createContextStatement: CreateContext = {
       type: "CreateContext",
       id: this._ctxValues.get(ctx._contextId) as string,
-      parentContext: ctx._parentId ? this._ctxValues.get(ctx._parentId) as string : null,
+      parentContext: ctx._parentId
+        ? (this._ctxValues.get(ctx._parentId) as string)
+        : null,
       switchToContext: !!ctx.AND_SWITCH(),
-    }
-  }
+    };
+    this._ctxValues.set(ctx, createContextStatement);
+  };
 
   enterRecipe = (ctx: RecipeContext) => {};
 
@@ -113,7 +131,9 @@ export class CucinalistWalker extends CucinalistListener {
     const recipe: Recipe = {
       type: "Recipe",
       id: recipeId,
-      name: ctx._fullname ? this._ctxValues.get(ctx._fullname) as string: recipeId,
+      name: ctx._fullname
+        ? (this._ctxValues.get(ctx._fullname) as string)
+        : recipeId,
       serves: this._ctxValues.get(ctx.serving())! as Recipe["serves"],
       ingredients: this._ctxValues.get(
         ctx.ingredients(),
@@ -163,34 +183,33 @@ export class CucinalistWalker extends CucinalistListener {
   };
 
   exitWhenCondition = (ctx: WhenConditionContext) => {
-    const strCtx = this._ctxValues.get(ctx.string_()) as string;
     const condition: StepPrecondition = {
       ingredientsNeeded: [
         this._resolveInputOrOutputId(this._ctxValues.get(ctx.id()) as string),
       ],
     };
-    if (strCtx) {
-      condition.conditionDescription = this._ctxValues.get(strCtx) as string;
+    if (ctx.string_()) {
+      condition.conditionDescription = this._ctxValues.get(
+        ctx.string_(),
+      ) as string;
     }
     this._ctxValues.set(ctx, condition);
   };
 
   exitCookingStep = (ctx: CookingStepContext) => {
-    const start = [ctx.start.line, ctx.start.start + 1];
-    const end = ctx.stop ? [ctx.stop.line, ctx.stop.start - 1] : start;
-    const produces = (this._ctxValues.get(ctx._outputs)  as string[] || []).map(
-      (outputId): CookingStepOutput => {
-        const stepOutput: CookingStepOutput = {
-          type: "CookingStepOutput",
-          outputId,
-        };
-        this._ingredientIdPointerMap.set(outputId, stepOutput);
-        return stepOutput;
-      },
-    );
+    const produces = (
+      (this._ctxValues.get(ctx._outputs) as string[]) || []
+    ).map((outputId): CookingStepOutput => {
+      const stepOutput: CookingStepOutput = {
+        type: "CookingStepOutput",
+        outputId,
+      };
+      this._ingredientIdPointerMap.set(outputId, stepOutput);
+      return stepOutput;
+    });
     const ingredients = (
       this._ctxValues.get(ctx._sourceIngredients)! as string[]
-    ).map(id => this._resolveInputOrOutputId(id));
+    ).map((id) => this._resolveInputOrOutputId(id));
 
     const step: CookingStep = {
       type: "CookingStep",
@@ -202,28 +221,88 @@ export class CucinalistWalker extends CucinalistListener {
       keepAnEyeMinutes: 0,
       inactiveMinutes: 0,
     };
+    if (ctx.OPTIONAL()) {
+      step.isOptional = true;
+    }
     if (ctx._sourceOfStep) {
-      step.source = this._resolveInputOrOutputId(this._ctxValues.get(ctx._sourceOfStep) as string);
+      step.source = this._resolveInputOrOutputId(
+        this._ctxValues.get(ctx._sourceOfStep) as string,
+      );
       step.ingredients.push(step.source);
     }
     if (ctx._targetOfStep) {
-      step.target = this._resolveInputOrOutputId(this._ctxValues.get(ctx._targetOfStep) as string);
+      step.target = this._resolveInputOrOutputId(
+        this._ctxValues.get(ctx._targetOfStep) as string,
+      );
       step.ingredients.push(step.target);
     }
     if (ctx._mediumOfStep) {
-      step.medium = this._resolveInputOrOutputId(this._ctxValues.get(ctx._mediumOfStep) as string);
+      step.medium = this._resolveInputOrOutputId(
+        this._ctxValues.get(ctx._mediumOfStep) as string,
+      );
       step.ingredients.push(step.medium);
     }
-    if (ctx._activeMinutes) {
-      step.inactiveMinutes = parseInt(ctx._activeMinutes.text);
+    if (ctx.transition()) {
+      const transitionData = this._ctxValues.get(
+        ctx.transition(),
+      ) as TransitionData;
+      Object.assign(step, transitionData);
+    } else {
+      step.activeMinutes = 1;
+      if (step.produces.length === 0) {
+        const stepCtx = ctx.parentCtx.parentCtx;
+        const stepLineCtx = ctx.parentCtx;
+        const stepIndex = stepCtx.children.indexOf(stepLineCtx);
+        step.produces.push({
+          type: 'CookingStepOutput',
+          outputId: `step_output_${stepIndex+1}`,
+        })
+      }
     }
-    if (ctx._keepEyelMinutes) {
-      step.keepAnEyeMinutes = parseInt(ctx._keepEyelMinutes.text);
-    }
-    if (ctx._parallellMinutes) {
-      step.inactiveMinutes = parseInt(ctx._parallellMinutes.text);
-    }
+
     this._ctxValues.set(ctx, step);
+  };
+
+  exitActiveMinutesTransition = (ctx: ActiveMinutesTransitionContext) => {
+    const transitionData: TransitionData = {
+      activeMinutes: ctx._activeMinutes.text
+        ? parseInt(ctx._activeMinutes.text)
+        : 0,
+      inactiveMinutes: 0,
+      keepAnEyeMinutes: 0,
+    };
+    this._ctxValues.set(ctx, transitionData);
+  };
+
+  exitParallellMinutesTransition = (ctx: ParallellMinutesTransitionContext) => {
+    const transitionData: TransitionData = {
+      activeMinutes: 0,
+      inactiveMinutes: ctx._parallellMinutes
+        ? parseInt(ctx._parallellMinutes.text)
+        : 0,
+      keepAnEyeMinutes: 0,
+    };
+    this._ctxValues.set(ctx, transitionData);
+  };
+
+  exitSingleMinuteTransition = (ctx: SingleMinuteTransitionContext) => {
+    const transitionData: TransitionData = {
+      activeMinutes: 1,
+      inactiveMinutes: 0,
+      keepAnEyeMinutes: 0,
+    };
+    this._ctxValues.set(ctx, transitionData);
+  };
+
+  exitKeepEyelMinutesTransition = (ctx: KeepEyelMinutesTransitionContext) => {
+    const transitionData: TransitionData = {
+      activeMinutes: 0,
+      inactiveMinutes: 0,
+      keepAnEyeMinutes: ctx._keepEyelMinutes
+        ? parseInt(ctx._keepEyelMinutes.text)
+        : 0,
+    };
+    this._ctxValues.set(ctx, transitionData);
   };
 
   exitServing = (ctx: ServingContext) => {
@@ -240,9 +319,20 @@ export class CucinalistWalker extends CucinalistListener {
         value: (this._ctxValues.get(ctx.ingredientAmount()) as number) || 0,
         unit: ctx._unitOfMeasureId
           ? (this._ctxValues.get(ctx._unitOfMeasureId)! as string)
-          : "items",
+          : "item",
       },
     };
+    if (
+      (ingredient.amount.unit === "item" ||
+        ingredient.amount.unit === "items") &&
+      ingredient.amount.value === 0 &&
+      this._ctxValues.get(ctx.ingredientAmount()) === undefined
+    ) {
+      ingredient.amount.value = 1;
+    }
+    if (ctx.OPTIONAL()) {
+      ingredient.isOptional = true;
+    }
     this._ingredientIdPointerMap.set(ingredientId, ingredient);
     this._ctxValues.set(ctx, ingredient);
   };
@@ -252,10 +342,14 @@ export class CucinalistWalker extends CucinalistListener {
     const unitOfMeasure: UnitOfMeasure = {
       type: "UnitOfMeasure",
       name: this._ctxValues.get(ctx._name) as string,
-      defaultSymbol: defaultNode ? this._ctxValues.get(defaultNode) as string : this._ctxValues.get(ctx._name) as string,
+      defaultSymbol: defaultNode
+        ? (this._ctxValues.get(defaultNode) as string)
+        : (this._ctxValues.get(ctx._name) as string),
       id: this._ctxValues.get(ctx._name) as string,
       measuring: this._ctxValues.get(ctx._measuring) as string,
-      symbolPlural: ctx._plural ? this._ctxValues.get(ctx._plural) as string : undefined,
+      symbolPlural: ctx._plural
+        ? (this._ctxValues.get(ctx._plural) as string)
+        : undefined,
       aka: ctx._akaList ? (this._ctxValues.get(ctx._akaList) as string[]) : [],
     };
     this._ctxValues.set(ctx, unitOfMeasure);
@@ -287,12 +381,11 @@ export class CucinalistWalker extends CucinalistListener {
   exitQuotedString = (ctx: QuotedStringContext) => {
     const text = ctx.STRING().getText();
     this._ctxValues.set(ctx, text.substring(1, text.length - 1));
-  }
+  };
 
   exitUnquotedString = (ctx: UnquotedStringContext) => {
     this._ctxValues.set(ctx, ctx.SINGLE_ID().getText());
-  }
-
+  };
 
   exitIdList = (ctx: IdListContext) => {
     const ids: string[] = [];
@@ -309,7 +402,7 @@ export class CucinalistWalker extends CucinalistListener {
 
   exitCourse = (ctx: CourseContext) => {
     const course: MealCourse = {
-      type: 'MealCourse',
+      type: "MealCourse",
       name: this._ctxValues.get(ctx._courseName) as string,
       recipesIds: ctx
         .recipeLine_list()
@@ -350,21 +443,25 @@ export class CucinalistWalker extends CucinalistListener {
 
   exitInclude = (ctx: IncludeContext) => {
     const include: IncludeStatement = {
-      type: 'IncludeStatement',
+      type: "IncludeStatement",
       fileToInclude: this._ctxValues.get(ctx._fileToInclude) as string,
-    }
+    };
     this._ctxValues.set(ctx, include);
   };
 
   exitString = (ctx: StringContext) => {
-    const str =  ctx.quotedString() ? this._ctxValues.get(ctx.quotedString()) : this._ctxValues.get(ctx.unquotedString());
+    const str = ctx.quotedString()
+      ? this._ctxValues.get(ctx.quotedString())
+      : this._ctxValues.get(ctx.unquotedString());
     this._ctxValues.set(ctx, str);
-  }
+  };
 
   exitId = (ctx: IdContext) => {
-    const idStr =  ctx.quotedString() ? this._ctxValues.get(ctx.quotedString()) : this._ctxValues.get(ctx.unquotedString());
+    const idStr = ctx.quotedString()
+      ? this._ctxValues.get(ctx.quotedString())
+      : this._ctxValues.get(ctx.unquotedString());
     this._ctxValues.set(ctx, idStr);
-  }
+  };
 
   exitStringList = (ctx: StringListContext) => {
     const strings: string[] = [];
@@ -372,5 +469,5 @@ export class CucinalistWalker extends CucinalistListener {
       strings.push(this._ctxValues.get(idCtx) as string);
     }
     this._ctxValues.set(ctx, strings);
-  }
+  };
 }

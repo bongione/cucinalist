@@ -29,11 +29,12 @@ condition: DASH WHEN whenCondition (COMMA whenCondition)*;
 whenCondition: id string?;
 cookingStep: stepStart=DASH OPTIONAL? action=id sourceIngredients=idList
     (FROM sourceOfStep=id)? ((TO|ON) targetOfStep=id)? (IN mediumOfStep=id)?
-    (( activeDash=DASH activeMinutes=INT RA
-    | RA
-    | RA_PARALLEL_TIME_LEFT parallellMinutes=INT RA_PARALLEL_TIME_RIGHT
-    | RA_KEEPYE_TIME_LEFT keepEyelMinutes=INT RA_KEEPYE_TIME_RIGHT
-    ) outputs=idList)? SM;
+    (transition outputs=idList)? SM;
+transition: activeDash=DASH activeMinutes=INT RA                                       # activeMinutesTransition
+                | RA                                                                   # singleMinuteTransition
+                | RA_PARALLEL_TIME_LEFT parallellMinutes=INT RA_PARALLEL_TIME_RIGHT    # parallellMinutesTransition
+                | RA_KEEPYE_TIME_LEFT keepEyelMinutes=INT RA_KEEPYE_TIME_RIGHT         # keepEyelMinutesTransition;
+
 idList: id (COMMA id)* (AND id)?;
 
 id: quotedString | unquotedString;

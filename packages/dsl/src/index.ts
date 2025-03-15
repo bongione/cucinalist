@@ -1,4 +1,4 @@
-export * from "./semanticModel";
+export * from "./ASTModel";
 export {
   parseCucinalistDsl,
   parseCucinalistDslFile,

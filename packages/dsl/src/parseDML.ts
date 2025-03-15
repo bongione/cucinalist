@@ -1,9 +1,9 @@
 import { CharStream, CommonTokenStream, ParseTreeWalker } from "antlr4";
 import CucinalistLexer from "./__generated__/cucinalistLexer";
 import CheffieParser from "./__generated__/cucinalistParser";
-import { CucinalistWalker } from "./cucinalistWalker";
+import { CucinalistASTWalker } from "./cucinalistASTWalker";
 import { readFile } from "node:fs/promises";
-import { CucinalistDMLStatement, IncludeStatement } from "./semanticModel";
+import { CucinalistDMLStatement, IncludeStatement } from "./ASTModel";
 import { dirname, join } from "node:path";
 import {
   CucinalistSemanticTokenWalker
@@ -53,7 +53,7 @@ export function parseCucinalistDsl(cucinalistDslString: string) {
   const tokens = new CommonTokenStream(lexer);
   const parser = new CheffieParser(tokens);
   const tree = parser.program();
-  const walker = new CucinalistWalker();
+  const walker = new CucinalistASTWalker();
   ParseTreeWalker.DEFAULT.walk(walker, tree);
   return walker.statements;
 }

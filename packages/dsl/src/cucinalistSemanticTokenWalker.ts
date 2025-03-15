@@ -1,5 +1,6 @@
 import CucinalistListener from "./__generated__/cucinalistParserListener";
 import {
+  ActiveMinutesTransitionContext,
   AmountRangeContext,
   ConditionContext,
   ContextContext,
@@ -12,24 +13,23 @@ import {
   IncludeContext,
   IngredientLineContext,
   IngredientsContext,
-  IntAmountContext,
-  MealContext,
+  IntAmountContext, KeepEyelMinutesTransitionContext,
+  MealContext, ParallellMinutesTransitionContext,
   ProgramContext,
   QuotedStringContext,
   RangeContext,
   RecipeContext,
   RecipeLineContext,
   RecipeStepLineContext,
-  ServingContext,
+  ServingContext, SingleMinuteTransitionContext,
   SingleNumberContext,
-  StatementContext,
   StepsContext,
   StringContext,
   StringListContext,
   UnitOfMeasureContext,
   UnquotedStringContext,
-  WhenConditionContext,
-} from "./__generated__/cucinalistParser";
+  WhenConditionContext
+} from './__generated__/cucinalistParser'
 
 export interface ParsedToken {
   line: number;
@@ -55,7 +55,8 @@ export interface ParsedToken {
     | "comment"
     | "string"
     | "number"
-    | "regexp";
+    | "regexp"
+    | "reference";
   tokenModifiers: Array<
     | "declaration"
     | "documentation"
@@ -65,6 +66,12 @@ export interface ParsedToken {
     | "deprecated"
     | "modification"
     | "async"
+    | "recipe"
+    | "unitOfMeasure"
+    | "ingredient"
+    | "cookingMethod"
+    | "external"
+    | "internal"
   >;
 }
 
@@ -164,8 +171,8 @@ export class CucinalistSemanticTokenWalker extends CucinalistListener {
       line: recipeId.start.line - 1,
       startCharacter: recipeId.start.column,
       length: recipeId.stop.stop - recipeId.start.start + 1,
-      tokenType: "variable",
-      tokenModifiers: ["readonly"],
+      tokenType: "type",
+      tokenModifiers: ["declaration"],
     });
     const fullName = ctx.FULLNAME();
     if (fullName) {
@@ -256,8 +263,8 @@ export class CucinalistSemanticTokenWalker extends CucinalistListener {
       ...(this._ctxValues.get(ctx.id()) || []).map(
         (t): ParsedToken => ({
           ...t,
-          tokenType: "variable",
-          tokenModifiers: ["readonly"],
+          tokenType: "reference",
+          tokenModifiers: ["internal", "ingredient"],
         }),
       ),
     );
@@ -293,8 +300,27 @@ export class CucinalistSemanticTokenWalker extends CucinalistListener {
         tokenModifiers: ["modification"],
       });
     }
-    tokens.push(...(this._ctxValues.get(ctx._action) || []));
-    tokens.push(...(this._ctxValues.get(ctx._sourceIngredients) || []));
+    tokens.push(
+      ...(this._ctxValues.get(ctx._action) || []).map(
+        (t): ParsedToken => ({
+          ...t,
+          tokenType: "reference",
+          tokenModifiers: ["external", "cookingMethod"],
+        }),
+      ),
+    );
+    tokens.push(
+      ...(this._ctxValues.get(ctx._sourceIngredients) || []).map(
+        (t): ParsedToken =>
+          t.tokenType === "keyword"
+            ? t
+            : {
+                ...t,
+                tokenType: "reference",
+                tokenModifiers: ["internal", "ingredient"],
+              },
+      ),
+    );
     if (ctx.FROM()) {
       tokens.push({
         line: ctx.FROM().symbol.line - 1,
@@ -305,7 +331,18 @@ export class CucinalistSemanticTokenWalker extends CucinalistListener {
       });
     }
     if (ctx._sourceOfStep) {
-      tokens.push(...(this._ctxValues.get(ctx._sourceOfStep) || []));
+      tokens.push(
+        ...(this._ctxValues.get(ctx._sourceOfStep) || []).map(
+          (t): ParsedToken =>
+            t.tokenType === "keyword"
+              ? t
+              : {
+                  ...t,
+                  tokenType: "reference",
+                  tokenModifiers: ["internal", "ingredient"],
+                },
+        ),
+      );
     }
     if (ctx.TO()) {
       tokens.push({
@@ -326,7 +363,18 @@ export class CucinalistSemanticTokenWalker extends CucinalistListener {
       });
     }
     if (ctx._targetOfStep) {
-      tokens.push(...(this._ctxValues.get(ctx._targetOfStep) || []));
+      tokens.push(
+        ...(this._ctxValues.get(ctx._targetOfStep) || []).map(
+          (t): ParsedToken =>
+            t.tokenType === "keyword"
+              ? t
+              : {
+                  ...t,
+                  tokenType: "reference",
+                  tokenModifiers: ["internal", "ingredient"],
+                },
+        ),
+      );
     }
     if (ctx.IN()) {
       tokens.push({
@@ -337,6 +385,57 @@ export class CucinalistSemanticTokenWalker extends CucinalistListener {
         tokenModifiers: [],
       });
     }
+    if (ctx._mediumOfStep) {
+      tokens.push(
+        ...(this._ctxValues.get(ctx._targetOfStep) || []).map(
+          (t): ParsedToken =>
+            t.tokenType === "keyword"
+              ? t
+              : {
+                  ...t,
+                  tokenType: "reference",
+                  tokenModifiers: ["external", "ingredient"],
+                },
+        ),
+      );
+    }
+    if (ctx.transition()) {
+      tokens.push(...(this._ctxValues.get(ctx.transition()) || []));
+    }
+
+    if (ctx._outputs) {
+      tokens.push(
+        ...(this._ctxValues.get(ctx._outputs) || []).map(
+          (t): ParsedToken =>
+            t.tokenType === "keyword"
+              ? t
+              : {
+                  ...t,
+                  tokenType: "variable",
+                  tokenModifiers: [
+                    "readonly",
+                    "declaration",
+                    "internal",
+                    "ingredient",
+                  ],
+                },
+        ),
+      );
+    }
+    if (ctx.SM()) {
+      tokens.push({
+        line: ctx.SM().symbol.line - 1,
+        startCharacter: ctx.SM().symbol.column,
+        length: ctx.SM().symbol.stop - ctx.SM().symbol.start + 1,
+        tokenType: "keyword",
+        tokenModifiers: [],
+      });
+    }
+    this._ctxValues.set(ctx, tokens);
+  };
+
+  exitActiveMinutesTransition = (ctx: ActiveMinutesTransitionContext) => {
+    const tokens: ParsedToken[] = [];
     if (ctx._activeDash) {
       tokens.push({
         line: ctx._activeDash.line - 1,
@@ -345,25 +444,17 @@ export class CucinalistSemanticTokenWalker extends CucinalistListener {
         tokenType: "operator",
         tokenModifiers: [],
       });
-      if (ctx._activeMinutes) {
-        tokens.push({
-          line: ctx._activeMinutes.line - 1,
-          startCharacter: ctx._activeMinutes.column,
-          length: ctx._activeMinutes.stop - ctx._activeMinutes.start + 1,
-          tokenType: "number",
-          tokenModifiers: [],
-        });
-      }
-      if (ctx.RA()) {
-        tokens.push({
-          line: ctx.RA().symbol.line - 1,
-          startCharacter: ctx.RA().symbol.column,
-          length: ctx.RA().symbol.stop - ctx.RA().symbol.start + 1,
-          tokenType: "operator",
-          tokenModifiers: [],
-        });
-      }
-    } else if (ctx.RA()) {
+    }
+    if (ctx._activeMinutes) {
+      tokens.push({
+        line: ctx._activeMinutes.line - 1,
+        startCharacter: ctx._activeMinutes.column,
+        length: ctx._activeMinutes.stop - ctx._activeMinutes.start + 1,
+        tokenType: "number",
+        tokenModifiers: [],
+      });
+    }
+    if (ctx.RA()) {
       tokens.push({
         line: ctx.RA().symbol.line - 1,
         startCharacter: ctx.RA().symbol.column,
@@ -372,6 +463,25 @@ export class CucinalistSemanticTokenWalker extends CucinalistListener {
         tokenModifiers: [],
       });
     }
+    this._ctxValues.set(ctx, tokens);
+  };
+
+  exitSingleMinuteTransition = (ctx: SingleMinuteTransitionContext) => {
+    const tokens: ParsedToken[] = [];
+    if (ctx.RA()) {
+      tokens.push({
+        line: ctx.RA().symbol.line - 1,
+        startCharacter: ctx.RA().symbol.column,
+        length: ctx.RA().symbol.stop - ctx.RA().symbol.start + 1,
+        tokenType: "operator",
+        tokenModifiers: [],
+      });
+    }
+    this._ctxValues.set(ctx, tokens);
+  }
+
+  exitParallellMinutesTransition = (ctx: ParallellMinutesTransitionContext) => {
+    const tokens: ParsedToken[] = [];
     if (ctx.RA_PARALLEL_TIME_LEFT()) {
       tokens.push({
         line: ctx.RA_PARALLEL_TIME_LEFT().symbol.line - 1,
@@ -405,6 +515,11 @@ export class CucinalistSemanticTokenWalker extends CucinalistListener {
         tokenModifiers: [],
       });
     }
+    this._ctxValues.set(ctx, tokens);
+  }
+
+  exitKeepEyelMinutesTransition = (ctx: KeepEyelMinutesTransitionContext) => {
+    const tokens: ParsedToken[] = [];
     if (ctx.RA_KEEPYE_TIME_LEFT()) {
       tokens.push({
         line: ctx.RA_KEEPYE_TIME_LEFT().symbol.line - 1,
@@ -438,20 +553,8 @@ export class CucinalistSemanticTokenWalker extends CucinalistListener {
         tokenModifiers: [],
       });
     }
-    if (ctx._outputs) {
-      tokens.push(...(this._ctxValues.get(ctx._outputs) || []));
-    }
-    if (ctx.SM()) {
-      tokens.push({
-        line: ctx.SM().symbol.line - 1,
-        startCharacter: ctx.SM().symbol.column,
-        length: ctx.SM().symbol.stop - ctx.SM().symbol.start + 1,
-        tokenType: "keyword",
-        tokenModifiers: [],
-      });
-    }
     this._ctxValues.set(ctx, tokens);
-  };
+  }
 
   enterServing = (ctx: ServingContext) => {
     this._semantiTokens.push({
@@ -495,10 +598,22 @@ export class CucinalistSemanticTokenWalker extends CucinalistListener {
       ...(this._ctxValues.get(ctx.ingredientAmount()) || []),
     );
     this._semantiTokens.push(
-      ...(this._ctxValues.get(ctx._unitOfMeasureId) || []),
+      ...(this._ctxValues.get(ctx._unitOfMeasureId) || []).map(
+        (t): ParsedToken => ({
+          ...t,
+          tokenType: "reference",
+          tokenModifiers: ["external", "unitOfMeasure"],
+        }),
+      ),
     );
     this._semantiTokens.push(
-      ...(this._ctxValues.get(ctx._ingrediendNameId) || []),
+      ...(this._ctxValues.get(ctx._ingrediendNameId) || []).map(
+        (t): ParsedToken => ({
+          ...t,
+          tokenType: "reference",
+          tokenModifiers: ["external", "ingredient"],
+        }),
+      ),
     );
     if (ctx.SM()) {
       this._semantiTokens.push({

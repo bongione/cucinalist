@@ -210,11 +210,11 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
-        tokenType: "variable",
+        tokenType: "type",
         line: 0,
         startCharacter: 7,
         length: 11,
-        tokenModifiers: ["readonly"],
+        tokenModifiers: ["declaration"],
       },
       {
         tokenType: "keyword",
@@ -256,45 +256,45 @@ describe("recipes", () => {
         line: 3,
         startCharacter: 8,
         length: 1,
-        tokenModifiers: ['declaration'],
+        tokenModifiers: ["declaration"],
       },
       {
-        tokenType: 'number',
+        tokenType: "number",
         line: 3,
         startCharacter: 10,
         length: 1,
         tokenModifiers: [],
       },
       {
-        tokenType: 'operator',
+        tokenType: "operator",
         line: 3,
         startCharacter: 11,
         length: 1,
-        tokenModifiers: ['declaration'],
+        tokenModifiers: ["declaration"],
       },
       {
-        tokenType: 'number',
+        tokenType: "number",
         line: 3,
         startCharacter: 12,
         length: 1,
         tokenModifiers: [],
       },
       {
-        tokenType: 'variable',
+        tokenType: "reference",
+        tokenModifiers: ["external", "unitOfMeasure"],
         length: 6,
         line: 3,
         startCharacter: 14,
-        tokenModifiers: ['readonly'],
       },
       {
-        tokenType: 'variable',
+        tokenType: "reference",
+        tokenModifiers: ["external", "ingredient"],
         length: 5,
         line: 3,
         startCharacter: 21,
-        tokenModifiers: ['readonly'],
       },
       {
-        tokenType: 'keyword',
+        tokenType: "keyword",
         length: 1,
         line: 3,
         startCharacter: 26,
@@ -305,31 +305,31 @@ describe("recipes", () => {
         line: 4,
         startCharacter: 8,
         length: 1,
-        tokenModifiers: ['declaration'],
+        tokenModifiers: ["declaration"],
       },
       {
-        tokenType: 'number',
+        tokenType: "number",
         line: 4,
         startCharacter: 10,
         length: 1,
         tokenModifiers: [],
       },
       {
-        tokenType: 'variable',
         length: 5,
         line: 4,
         startCharacter: 12,
-        tokenModifiers: ['readonly'],
+        tokenType: "reference",
+        tokenModifiers: ["external", "unitOfMeasure"],
       },
       {
-        tokenType: 'variable',
         length: 3,
         line: 4,
         startCharacter: 18,
-        tokenModifiers: ['readonly'],
+        tokenType: "reference",
+        tokenModifiers: ["external", "ingredient"],
       },
       {
-        tokenType: 'keyword',
+        tokenType: "keyword",
         length: 1,
         line: 4,
         startCharacter: 21,
@@ -340,17 +340,17 @@ describe("recipes", () => {
         line: 5,
         startCharacter: 8,
         length: 1,
-        tokenModifiers: ['declaration'],
+        tokenModifiers: ["declaration"],
       },
       {
-        tokenType: 'variable',
         length: 6,
         line: 5,
         startCharacter: 10,
-        tokenModifiers: ['readonly'],
+        tokenType: "reference",
+        tokenModifiers: ["external", "ingredient"],
       },
       {
-        tokenType: 'keyword',
+        tokenType: "keyword",
         length: 1,
         line: 5,
         startCharacter: 16,
@@ -364,190 +364,218 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
+        // -
         tokenType: "operator",
         line: 7,
         startCharacter: 8,
         length: 1,
-        tokenModifiers: ['declaration'],
+        tokenModifiers: ["declaration"],
       },
       {
-        tokenType: 'variable',
+        // spread
+        tokenType: "reference",
         line: 7,
         length: 6,
         startCharacter: 10,
-        tokenModifiers: ['readonly'],
+        tokenModifiers: ["external", "cookingMethod"],
       },
       {
-        tokenType: 'variable',
+        // butter
+        tokenType: "reference",
         length: 6,
         line: 7,
         startCharacter: 17,
-        tokenModifiers: ['readonly'],
+        tokenModifiers: ["internal", "ingredient"],
       },
       {
-        tokenType: 'keyword',
+        // on
+        tokenType: "keyword",
         length: 2,
         line: 7,
         startCharacter: 24,
         tokenModifiers: [],
       },
       {
-        tokenType: 'variable',
+        // bread
+        tokenType: "reference",
         length: 5,
         line: 7,
         startCharacter: 27,
-        tokenModifiers: ['readonly'],
+        tokenModifiers: ["internal", "ingredient"],
       },
       {
-        tokenType: 'operator',
+        // -
+        tokenType: "operator",
         length: 1,
         line: 7,
         startCharacter: 33,
         tokenModifiers: [],
-      },{
-        tokenType: 'number',
+      },
+      {
+        // 1
+        tokenType: "number",
         length: 1,
         line: 7,
         startCharacter: 34,
         tokenModifiers: [],
       },
       {
-        tokenType: 'operator',
+        // ->
+        tokenType: "operator",
         length: 2,
         line: 7,
         startCharacter: 35,
         tokenModifiers: [],
       },
       {
-        tokenType: 'variable',
+        // butteredBread
+        tokenType: "variable",
         length: 13,
         line: 7,
         startCharacter: 38,
-        tokenModifiers: ['readonly'],
+        tokenModifiers: ["readonly", "declaration", "internal", "ingredient"],
       },
       {
-        tokenType: 'keyword',
+        // ;
+        tokenType: "keyword",
         length: 1,
         line: 7,
         startCharacter: 51,
         tokenModifiers: [],
       },
       {
+        // -
         tokenType: "operator",
         line: 8,
         startCharacter: 8,
         length: 1,
-        tokenModifiers: ['declaration'],
+        tokenModifiers: ["declaration"],
       },
       {
-        tokenType: 'variable',
+        // put
+        tokenType: "reference",
         line: 8,
         length: 3,
         startCharacter: 10,
-        tokenModifiers: ['readonly'],
+        tokenModifiers: ["external", "cookingMethod"],
       },
       {
-        tokenType: 'variable',
+        // ham
+        tokenType: "reference",
         length: 3,
         line: 8,
         startCharacter: 14,
-        tokenModifiers: ['readonly'],
+        tokenModifiers: ["internal", "ingredient"],
       },
       {
-        tokenType: 'keyword',
+        // on
+        tokenType: "keyword",
         length: 2,
         line: 8,
         startCharacter: 18,
         tokenModifiers: [],
       },
       {
-        tokenType: 'variable',
+        // butteredBread
+        tokenType: "reference",
         length: 13,
         line: 8,
         startCharacter: 21,
-        tokenModifiers: ['readonly'],
+        tokenModifiers:  ["internal", "ingredient"],
       },
       {
-        tokenType: 'operator',
+        // -
+        tokenType: "operator",
         length: 1,
         line: 8,
         startCharacter: 35,
         tokenModifiers: [],
-      },{
-        tokenType: 'number',
+      },
+      {
+        // 1
+        tokenType: "number",
         length: 1,
         line: 8,
         startCharacter: 36,
         tokenModifiers: [],
       },
       {
-        tokenType: 'operator',
+        // ->
+        tokenType: "operator",
         length: 2,
         line: 8,
         startCharacter: 37,
         tokenModifiers: [],
       },
       {
-        tokenType: 'variable',
+        // sandwich
+        tokenType: "variable",
         length: 8,
         line: 8,
         startCharacter: 40,
-        tokenModifiers: ['readonly'],
+        tokenModifiers: ["readonly", "declaration", "internal", "ingredient"],
       },
       {
-        tokenType: 'keyword',
+        // ;
+        tokenType: "keyword",
         length: 1,
         line: 8,
         startCharacter: 48,
         tokenModifiers: [],
       },
       {
+        // -
         tokenType: "operator",
         line: 9,
         startCharacter: 8,
         length: 1,
-        tokenModifiers: ['declaration'],
+        tokenModifiers: ["declaration"],
       },
       {
-        tokenType: 'variable',
+        // serve
+        tokenType: "reference",
         line: 9,
         length: 5,
         startCharacter: 10,
-        tokenModifiers: ['readonly'],
+        tokenModifiers: ["external", "cookingMethod"],
       },
       {
-        tokenType: 'variable',
+        // sandwich
+        tokenType: "reference",
         line: 9,
         length: 8,
         startCharacter: 16,
-        tokenModifiers: ['readonly'],
+        tokenModifiers: ["internal", "ingredient"],
       },
       {
-        tokenType: 'operator',
+        // ->
+        tokenType: "operator",
         line: 9,
         length: 2,
         startCharacter: 25,
         tokenModifiers: [],
       },
       {
-        tokenType: 'variable',
+        // hamSandwich
+        tokenType: "variable",
         line: 9,
         length: 11,
         startCharacter: 28,
-        tokenModifiers: ['readonly'],
+        tokenModifiers: ["readonly", "declaration", 'internal', 'ingredient'],
       },
       {
-        tokenType: 'keyword',
+        // ;
+        tokenType: "keyword",
         length: 1,
         line: 9,
         startCharacter: 39,
         tokenModifiers: [],
-      }
+      },
     ];
     expect(tokens).toMatchObject(expected);
   });
 
-  it('Recipe with step of parallel duration', () => {
+  it("Recipe with step of parallel duration", () => {
     const dsl = `recipe test
     serves 1
     ingredients
@@ -556,21 +584,25 @@ describe("recipes", () => {
         - spread butter -[1]-> butteredBread;
     `;
     const tokens = parseCucinalistSemanticTokensDsl(dsl);
-    const expected: ParsedToken[] = [{
-      tokenType: "keyword",
-      line: 0,
-      startCharacter: 0,
-      length: 6,
-      tokenModifiers: [],
-    },
+    const expected: ParsedToken[] = [
       {
-        tokenType: "variable",
+        // recipe
+        tokenType: "keyword",
+        line: 0,
+        startCharacter: 0,
+        length: 6,
+        tokenModifiers: [],
+      },
+      {
+        // test
+        tokenType: "type",
         line: 0,
         startCharacter: 7,
         length: 4,
-        tokenModifiers: ["readonly"],
+        tokenModifiers: ["declaration"],
       },
       {
+        // serves
         tokenType: "keyword",
         line: 1,
         startCharacter: 4,
@@ -578,6 +610,7 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
+        // 1
         tokenType: "number",
         line: 1,
         startCharacter: 11,
@@ -585,6 +618,7 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
+        // ingredients
         tokenType: "keyword",
         line: 2,
         startCharacter: 4,
@@ -592,27 +626,31 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
+        // -
         tokenType: "operator",
         line: 3,
         startCharacter: 8,
         length: 1,
-        tokenModifiers: ['declaration'],
+        tokenModifiers: ["declaration"],
       },
       {
-        tokenType: 'variable',
+        // butter
         length: 6,
         line: 3,
         startCharacter: 10,
-        tokenModifiers: ['readonly'],
+        tokenType: "reference",
+        tokenModifiers: ["external", "ingredient"],
       },
       {
-        tokenType: 'keyword',
+        // ;
+        tokenType: "keyword",
         length: 1,
         line: 3,
         startCharacter: 16,
         tokenModifiers: [],
       },
       {
+        // steps
         tokenType: "keyword",
         line: 4,
         startCharacter: 4,
@@ -620,66 +658,75 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
+        // -
         tokenType: "operator",
         line: 5,
         startCharacter: 8,
         length: 1,
-        tokenModifiers: ['declaration'],
+        tokenModifiers: ["declaration"],
       },
       {
-        tokenType: 'variable',
+        // spread
+        tokenType: "reference",
         line: 5,
         length: 6,
         startCharacter: 10,
-        tokenModifiers: ['readonly'],
+        tokenModifiers: ["external", "cookingMethod"],
       },
       {
-        tokenType: 'variable',
+        // butter
+        tokenType: "reference",
         length: 6,
         line: 5,
         startCharacter: 17,
-        tokenModifiers: ['readonly'],
+        tokenModifiers: ["internal", "ingredient"],
       },
       {
-        tokenType: 'operator',
+        // -[
+        tokenType: "operator",
         length: 2,
         line: 5,
         startCharacter: 24,
         tokenModifiers: [],
-      },{
-        tokenType: 'number',
+      },
+      {
+        // 1
+        tokenType: "number",
         length: 1,
         line: 5,
         startCharacter: 26,
         tokenModifiers: [],
       },
       {
-        tokenType: 'operator',
+        // ]->
+        tokenType: "operator",
         length: 3,
         line: 5,
         startCharacter: 27,
         tokenModifiers: [],
       },
       {
-        tokenType: 'variable',
+        // butteredBread
+        tokenType: "variable",
         length: 13,
         line: 5,
         startCharacter: 31,
-        tokenModifiers: ['readonly'],
+        tokenModifiers: ["readonly", "declaration", "internal", "ingredient"],
       },
       {
-        tokenType: 'keyword',
+        // ;
+        tokenType: "keyword",
         length: 1,
         line: 5,
         startCharacter: 44,
         tokenModifiers: [],
-      }
+      },
     ];
 
     expect(tokens).toMatchObject(expected);
-  })
+  });
 
-  it('Recipe with condition and keepEye time', () => {
+  it("Recipe with condition and keepEye time", () => {
     const dsl = `
     recipe test
       serves 1
@@ -690,21 +737,25 @@ describe("recipes", () => {
           - spread butter -(90)-> butteredBread;
     `;
     const tokens = parseCucinalistSemanticTokensDsl(dsl);
-    const expected: ParsedToken[] = [{
-      tokenType: "keyword",
-      line: 1,
-      startCharacter: 4,
-      length: 6,
-      tokenModifiers: [],
-    },
+    const expected: ParsedToken[] = [
       {
-        tokenType: "variable",
+        // recipe
+        tokenType: "keyword",
+        line: 1,
+        startCharacter: 4,
+        length: 6,
+        tokenModifiers: [],
+      },
+      {
+        // test
+        tokenType: "type",
         line: 1,
         startCharacter: 11,
         length: 4,
-        tokenModifiers: ["readonly"],
+        tokenModifiers: ["declaration"],
       },
       {
+        // serves
         tokenType: "keyword",
         line: 2,
         startCharacter: 6,
@@ -712,6 +763,7 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
+        // 1
         tokenType: "number",
         line: 2,
         startCharacter: 13,
@@ -719,6 +771,7 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
+        // ingredients
         tokenType: "keyword",
         line: 3,
         startCharacter: 6,
@@ -726,27 +779,31 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
+        // -
         tokenType: "operator",
         line: 4,
         startCharacter: 8,
         length: 1,
-        tokenModifiers: ['declaration'],
+        tokenModifiers: ["declaration"],
       },
       {
-        tokenType: 'variable',
+        // butter
         length: 6,
         line: 4,
         startCharacter: 10,
-        tokenModifiers: ['readonly'],
+        tokenType: "reference",
+        tokenModifiers: ["external", "ingredient"],
       },
       {
-        tokenType: 'keyword',
+        // ;
+        tokenType: "keyword",
         length: 1,
         line: 4,
         startCharacter: 16,
         tokenModifiers: [],
       },
       {
+        // steps
         tokenType: "keyword",
         line: 5,
         startCharacter: 6,
@@ -754,13 +811,15 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
+        // -
         tokenType: "operator",
         line: 6,
         startCharacter: 8,
         length: 1,
-        tokenModifiers: ['declaration'],
+        tokenModifiers: ["declaration"],
       },
       {
+        // when
         tokenType: "keyword",
         line: 6,
         startCharacter: 10,
@@ -768,88 +827,101 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
-        tokenType: 'variable',
+        // butter
+        tokenType: "reference",
         length: 6,
         line: 6,
         startCharacter: 15,
-        tokenModifiers: ['readonly'],
+        tokenModifiers: ["internal", "ingredient"],
       },
       {
-        tokenType: 'label',
+        // 'soft'
+        tokenType: "label",
         length: 6,
         line: 6,
         startCharacter: 22,
         tokenModifiers: [],
       },
       {
-        tokenType: 'operator',
+        // ,
+        tokenType: "operator",
         length: 1,
         line: 6,
         startCharacter: 28,
         tokenModifiers: [],
       },
       {
-        tokenType: 'variable',
+        // butter
+        tokenType: "reference",
         length: 6,
         line: 6,
         startCharacter: 30,
-        tokenModifiers: ['readonly'],
+        tokenModifiers: ["internal", "ingredient"],
       },
       {
+        // -
         tokenType: "operator",
         line: 7,
         startCharacter: 10,
         length: 1,
-        tokenModifiers: ['declaration'],
+        tokenModifiers: ["declaration"],
       },
       {
-        tokenType: 'variable',
+        // spread
+        tokenType: "reference",
         line: 7,
         length: 6,
         startCharacter: 12,
-        tokenModifiers: ['readonly'],
+        tokenModifiers: ["external", "cookingMethod"],
       },
       {
-        tokenType: 'variable',
+        // butter
+        tokenType: "reference",
         length: 6,
         line: 7,
         startCharacter: 19,
-        tokenModifiers: ['readonly'],
+        tokenModifiers: ["internal", "ingredient"],
       },
       {
-        tokenType: 'operator',
+        // -(
+        tokenType: "operator",
         length: 2,
         line: 7,
         startCharacter: 26,
         tokenModifiers: [],
-      },{
-        tokenType: 'number',
+      },
+      {
+        // 90
+        tokenType: "number",
         length: 2,
         line: 7,
         startCharacter: 28,
         tokenModifiers: [],
       },
       {
-        tokenType: 'operator',
+        // )->
+        tokenType: "operator",
         length: 3,
         line: 7,
         startCharacter: 30,
         tokenModifiers: [],
       },
       {
-        tokenType: 'variable',
+        // butteredBread
+        tokenType: "variable",
         length: 13,
         line: 7,
         startCharacter: 34,
-        tokenModifiers: ['readonly'],
+        tokenModifiers: ["readonly", "declaration", "internal", "ingredient"],
       },
       {
-        tokenType: 'keyword',
+        // ;
+        tokenType: "keyword",
         length: 1,
         line: 7,
         startCharacter: 47,
         tokenModifiers: [],
-      }
+      },
     ];
     expect(tokens).toMatchObject(expected);
   });
