@@ -7,3 +7,5 @@ src/**/*/js
 dist/
 migrations/
 dev.db*
+/packages/graphql/app/
+/packages/cucinalist-lang/out/
