@@ -1,191 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { parseCucinalistSemanticTokensDsl, ParsedToken } from "../src";
-
-describe("Context tokens", () => {
-  it("Use context", () => {
-    const dsl = `context test`;
-    const parsed = parseCucinalistSemanticTokensDsl(dsl);
-    expect(parsed.length).toBe(2);
-    const expected: ParsedToken[] = [
-      {
-        tokenType: "keyword",
-        line: 0,
-        startCharacter: 0,
-        length: 7,
-        tokenModifiers: [],
-      },
-      {
-        tokenType: "variable",
-        line: 0,
-        startCharacter: 8,
-        length: 4,
-        tokenModifiers: ["readonly"],
-      },
-    ];
-    expect(parsed).toMatchObject(expected);
-  });
-
-  it("Two lines", () => {
-    const dsl = ` context   test1
-    context     test2`;
-    const parsed = parseCucinalistSemanticTokensDsl(dsl);
-    expect(parsed.length).toBe(4);
-
-    const expected: ParsedToken[] = [
-      {
-        tokenType: "keyword",
-        line: 0,
-        startCharacter: 1,
-        length: 7,
-        tokenModifiers: [],
-      },
-      {
-        tokenType: "variable",
-        line: 0,
-        startCharacter: 11,
-        length: 5,
-        tokenModifiers: ["readonly"],
-      },
-      {
-        tokenType: "keyword",
-        line: 1,
-        startCharacter: 4,
-        length: 7,
-        tokenModifiers: [],
-      },
-      {
-        tokenType: "variable",
-        line: 1,
-        startCharacter: 16,
-        length: 5,
-        tokenModifiers: ["readonly"],
-      },
-    ];
-    expect(parsed).toMatchObject(expected);
-  });
-
-  it("Create context no parent and no switch", () => {
-    const dsl = `create context test`;
-    const parsed = parseCucinalistSemanticTokensDsl(dsl);
-    expect(parsed.length).toBe(2);
-    const expected: ParsedToken[] = [
-      {
-        tokenType: "keyword",
-        line: 0,
-        startCharacter: 0,
-        length: 14,
-        tokenModifiers: [],
-      },
-      {
-        tokenType: "variable",
-        line: 0,
-        startCharacter: 15,
-        length: 4,
-        tokenModifiers: ["readonly"],
-      },
-    ];
-    expect(parsed).toMatchObject(expected);
-  });
-
-  it("Create context with parent and no switch", () => {
-    const dsl = `create context test PaReNt public`;
-    const parsed = parseCucinalistSemanticTokensDsl(dsl);
-    expect(parsed.length).toBe(4);
-    const expected: ParsedToken[] = [
-      {
-        tokenType: "keyword",
-        line: 0,
-        startCharacter: 0,
-        length: 14,
-        tokenModifiers: [],
-      },
-      {
-        tokenType: "variable",
-        line: 0,
-        startCharacter: 15,
-        length: 4,
-        tokenModifiers: ["readonly"],
-      },
-      {
-        tokenType: "keyword",
-        line: 0,
-        startCharacter: 20,
-        length: 6,
-        tokenModifiers: [],
-      },
-      {
-        tokenType: "variable",
-        line: 0,
-        startCharacter: 27,
-        length: 6,
-        tokenModifiers: ["readonly"],
-      },
-    ];
-    expect(parsed).toMatchObject(expected);
-  });
-
-  it("Create context with no parent and switch", () => {
-    const dsl = `create context and SWITCH rotten`;
-    const parsed = parseCucinalistSemanticTokensDsl(dsl);
-    expect(parsed.length).toBe(2);
-    const expected: ParsedToken[] = [
-      {
-        tokenType: "keyword",
-        line: 0,
-        startCharacter: 0,
-        length: 25,
-        tokenModifiers: [],
-      },
-      {
-        tokenType: "variable",
-        line: 0,
-        startCharacter: 26,
-        length: 6,
-        tokenModifiers: ["readonly"],
-      },
-    ];
-    expect(parsed).toMatchObject(expected);
-  });
-
-  it("Create context with parent and switch", () => {
-    const dsl = `create context and SWITCH
-      rotten
-      parent public`;
-    const parsed = parseCucinalistSemanticTokensDsl(dsl);
-    expect(parsed.length).toBe(4);
-    const expected: ParsedToken[] = [
-      {
-        tokenType: "keyword",
-        line: 0,
-        startCharacter: 0,
-        length: 25,
-        tokenModifiers: [],
-      },
-      {
-        tokenType: "variable",
-        line: 1,
-        startCharacter: 6,
-        length: 6,
-        tokenModifiers: ["readonly"],
-      },
-      {
-        tokenType: "keyword",
-        line: 2,
-        startCharacter: 6,
-        length: 6,
-        tokenModifiers: [],
-      },
-      {
-        tokenType: "variable",
-        line: 2,
-        startCharacter: 13,
-        length: 6,
-        tokenModifiers: ["readonly"],
-      },
-    ];
-    expect(parsed).toMatchObject(expected);
-  });
-});
+import { describe, expect, it } from "vitest";
+import { parseCucinalistSemanticTokensDsl, ParsedToken } from "../../src";
 
 describe("recipes", () => {
   it("Simple recipe", () => {
@@ -203,6 +17,7 @@ describe("recipes", () => {
 
     const expected: ParsedToken[] = [
       {
+        // recipe
         tokenType: "keyword",
         line: 0,
         startCharacter: 0,
@@ -210,6 +25,7 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
+        // hamSandwich
         tokenType: "type",
         line: 0,
         startCharacter: 7,
@@ -217,6 +33,7 @@ describe("recipes", () => {
         tokenModifiers: ["declaration"],
       },
       {
+        // fullName
         tokenType: "keyword",
         line: 0,
         startCharacter: 19,
@@ -224,13 +41,15 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
+        // 'Ham sandwich'
         tokenType: "label",
         line: 0,
-        startCharacter: 28,
-        length: 14,
+        startCharacter: 29,
+        length: 12,
         tokenModifiers: [],
       },
       {
+        // serves
         tokenType: "keyword",
         line: 1,
         startCharacter: 4,
@@ -238,6 +57,7 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
+        // 1
         tokenType: "number",
         line: 1,
         startCharacter: 11,
@@ -245,6 +65,7 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
+        // ingredients
         tokenType: "keyword",
         line: 2,
         startCharacter: 4,
@@ -252,6 +73,7 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
+        // -
         tokenType: "operator",
         line: 3,
         startCharacter: 8,
@@ -259,6 +81,7 @@ describe("recipes", () => {
         tokenModifiers: ["declaration"],
       },
       {
+        // 1
         tokenType: "number",
         line: 3,
         startCharacter: 10,
@@ -266,13 +89,15 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
+        // -
         tokenType: "operator",
         line: 3,
         startCharacter: 11,
         length: 1,
-        tokenModifiers: ["declaration"],
+        tokenModifiers: [],
       },
       {
+        // 2
         tokenType: "number",
         line: 3,
         startCharacter: 12,
@@ -280,6 +105,7 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
+        // slices
         tokenType: "reference",
         tokenModifiers: ["external", "unitOfMeasure"],
         length: 6,
@@ -287,6 +113,7 @@ describe("recipes", () => {
         startCharacter: 14,
       },
       {
+        // bread
         tokenType: "reference",
         tokenModifiers: ["external", "ingredient"],
         length: 5,
@@ -294,13 +121,7 @@ describe("recipes", () => {
         startCharacter: 21,
       },
       {
-        tokenType: "keyword",
-        length: 1,
-        line: 3,
-        startCharacter: 26,
-        tokenModifiers: [],
-      },
-      {
+        // -
         tokenType: "operator",
         line: 4,
         startCharacter: 8,
@@ -308,6 +129,7 @@ describe("recipes", () => {
         tokenModifiers: ["declaration"],
       },
       {
+        // 1
         tokenType: "number",
         line: 4,
         startCharacter: 10,
@@ -315,6 +137,7 @@ describe("recipes", () => {
         tokenModifiers: [],
       },
       {
+        // slice
         length: 5,
         line: 4,
         startCharacter: 12,
@@ -322,6 +145,7 @@ describe("recipes", () => {
         tokenModifiers: ["external", "unitOfMeasure"],
       },
       {
+        // ham
         length: 3,
         line: 4,
         startCharacter: 18,
@@ -329,13 +153,7 @@ describe("recipes", () => {
         tokenModifiers: ["external", "ingredient"],
       },
       {
-        tokenType: "keyword",
-        length: 1,
-        line: 4,
-        startCharacter: 21,
-        tokenModifiers: [],
-      },
-      {
+        // -
         tokenType: "operator",
         line: 5,
         startCharacter: 8,
@@ -343,6 +161,7 @@ describe("recipes", () => {
         tokenModifiers: ["declaration"],
       },
       {
+        // butter
         length: 6,
         line: 5,
         startCharacter: 10,
@@ -350,13 +169,7 @@ describe("recipes", () => {
         tokenModifiers: ["external", "ingredient"],
       },
       {
-        tokenType: "keyword",
-        length: 1,
-        line: 5,
-        startCharacter: 16,
-        tokenModifiers: [],
-      },
-      {
+        // steps
         tokenType: "keyword",
         line: 6,
         startCharacter: 4,
@@ -436,14 +249,6 @@ describe("recipes", () => {
         tokenModifiers: ["readonly", "declaration", "internal", "ingredient"],
       },
       {
-        // ;
-        tokenType: "keyword",
-        length: 1,
-        line: 7,
-        startCharacter: 51,
-        tokenModifiers: [],
-      },
-      {
         // -
         tokenType: "operator",
         line: 8,
@@ -481,7 +286,7 @@ describe("recipes", () => {
         length: 13,
         line: 8,
         startCharacter: 21,
-        tokenModifiers:  ["internal", "ingredient"],
+        tokenModifiers: ["internal", "ingredient"],
       },
       {
         // -
@@ -514,14 +319,6 @@ describe("recipes", () => {
         line: 8,
         startCharacter: 40,
         tokenModifiers: ["readonly", "declaration", "internal", "ingredient"],
-      },
-      {
-        // ;
-        tokenType: "keyword",
-        length: 1,
-        line: 8,
-        startCharacter: 48,
-        tokenModifiers: [],
       },
       {
         // -
@@ -561,15 +358,7 @@ describe("recipes", () => {
         line: 9,
         length: 11,
         startCharacter: 28,
-        tokenModifiers: ["readonly", "declaration", 'internal', 'ingredient'],
-      },
-      {
-        // ;
-        tokenType: "keyword",
-        length: 1,
-        line: 9,
-        startCharacter: 39,
-        tokenModifiers: [],
+        tokenModifiers: ["readonly", "declaration", "internal", "ingredient"],
       },
     ];
     expect(tokens).toMatchObject(expected);
@@ -642,14 +431,6 @@ describe("recipes", () => {
         tokenModifiers: ["external", "ingredient"],
       },
       {
-        // ;
-        tokenType: "keyword",
-        length: 1,
-        line: 3,
-        startCharacter: 16,
-        tokenModifiers: [],
-      },
-      {
         // steps
         tokenType: "keyword",
         line: 4,
@@ -712,14 +493,6 @@ describe("recipes", () => {
         line: 5,
         startCharacter: 31,
         tokenModifiers: ["readonly", "declaration", "internal", "ingredient"],
-      },
-      {
-        // ;
-        tokenType: "keyword",
-        length: 1,
-        line: 5,
-        startCharacter: 44,
-        tokenModifiers: [],
       },
     ];
 
@@ -795,14 +568,6 @@ describe("recipes", () => {
         tokenModifiers: ["external", "ingredient"],
       },
       {
-        // ;
-        tokenType: "keyword",
-        length: 1,
-        line: 4,
-        startCharacter: 16,
-        tokenModifiers: [],
-      },
-      {
         // steps
         tokenType: "keyword",
         line: 5,
@@ -837,9 +602,9 @@ describe("recipes", () => {
       {
         // 'soft'
         tokenType: "label",
-        length: 6,
+        length: 4,
         line: 6,
-        startCharacter: 22,
+        startCharacter: 23,
         tokenModifiers: [],
       },
       {
@@ -913,14 +678,6 @@ describe("recipes", () => {
         line: 7,
         startCharacter: 34,
         tokenModifiers: ["readonly", "declaration", "internal", "ingredient"],
-      },
-      {
-        // ;
-        tokenType: "keyword",
-        length: 1,
-        line: 7,
-        startCharacter: 47,
-        tokenModifiers: [],
       },
     ];
     expect(tokens).toMatchObject(expected);

@@ -20,7 +20,7 @@
 			}]
 		},
 		"strings": {
-			"name": "string.quoted.double.cucinalist",
+			"name": "string.quoted.single.cucinalist",
 			"begin": "'",
 			"end": "'",
 			"patterns": [
@@ -29,7 +29,6 @@
 					"match": "\\\\."
 				}
 			]
-		}
-	},
+		}	},
 	"scopeName": "source.cucinalist"
 }
