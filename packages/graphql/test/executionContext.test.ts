@@ -11,6 +11,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await prisma.namedEntity.deleteMany();
+  await prisma.unitOfMeasureAcceptedLabel.deleteMany();
   await prisma.unitOfMeasure.deleteMany();
 });
 
