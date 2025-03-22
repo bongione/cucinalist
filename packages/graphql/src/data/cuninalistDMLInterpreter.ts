@@ -6,7 +6,11 @@ import {
 } from "@cucinalist/dsl";
 import { createAndInitExecutionContextManager } from "./executionContext";
 import {AssignableModels, ExecutionContextManager} from './dmlTypes'
-import {processCreateUnitOfMeasureStatement, processRecipeStatement} from './cucinalistDM'
+import {
+  processBoughtIngredientStatement,
+  processCreateUnitOfMeasureStatement,
+  processRecipeStatement
+} from './cucinalistDM'
 
 export async function executeDML(prismaClient: PrismaClient, dmlStr: string) {
   const statements = parseCucinalistDsl(dmlStr);
@@ -33,6 +37,9 @@ export async function executeDML(prismaClient: PrismaClient, dmlStr: string) {
           executionContext,
         );
         newOrUpdatedEntities.push(uom);
+      } else if (statement.type === 'BoughtIngredient') {
+        const ingredient = await processBoughtIngredientStatement(statement, executionContext);
+        newOrUpdatedEntities.push(ingredient);
       } else if (statement.type === 'SingleCourseMeal' || statement.type === 'MultiCourseMeal') {
         // Skip for now, no op, semantics to be decided
       } else {

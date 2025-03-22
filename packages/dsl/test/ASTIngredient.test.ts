@@ -14,14 +14,14 @@ describe("ASTIngredient", () => {
   });
 
   it('Ingredient with all fields defined', ()=> {
-    const dsl = `ingredient butter
+    const dsl = `ingredient butter fullname 'butter stick'
     plural 'butter sticks'
     aka 'butter sticks', 'fat of milk'
     measuredAs weight`;
     const expectedAST: CucinalistDslAST = [{
       type: 'BoughtIngredient',
       id: 'butter',
-      name: 'butter',
+      name: 'butter stick',
       plural: 'butter sticks',
       aka: ['butter sticks', 'fat of milk'],
       measuredAs: 'weight',

@@ -1,12 +1,12 @@
-import { Recipe, UnitOfMeasure } from "@cucinalist/dsl";
+import {BoughtIngredient, Recipe, UnitOfMeasure} from '@cucinalist/dsl'
 import { CucinalistModels, ExecutionContext } from "./dmlTypes";
 import {
   CookingStep,
   MeasuringFeature,
   Recipe as RecipeRecord,
-  RecipeIngredient,
-  StepOutputIngredient,
-} from "../__generated__/prismaClient";
+  RecipeIngredient
+} from '../__generated__/prismaClient'
+import {a} from 'vitest/dist/chunks/suite.qtkXWc6R'
 
 interface RecipeExecutionContext extends ExecutionContext {
   readonly localResolutions: Map<
@@ -83,6 +83,7 @@ async function findOrCreateStoreBoughtIngredient(
         data: {
           gblId: ingredientId,
           name: ingredientId,
+          measuredAs: 'unspecified',
         },
       });
     recipeOrStoreBoughtIngredient = {
@@ -367,4 +368,40 @@ export async function processCreateUnitOfMeasureStatement(
     unitRecord.id,
   );
   return unitRecord;
+}
+
+export async function processBoughtIngredientStatement(ingredient: BoughtIngredient, executionContext: ExecutionContext) {
+  const existingIngredient = await executionContext.localResolveSymbol(
+    ingredient.id,
+    ["StoreBoughtIngredient"],
+  );
+  const p = existingIngredient === null ? executionContext.prisma.storeBoughtIngredient.create({
+    data: {
+      gblId: ingredient.id,
+      name: ingredient.name,
+      measuredAs: ingredient.measuredAs,
+      plural: ingredient.plural,
+    },
+  }) : executionContext.prisma.storeBoughtIngredient.update({
+    where: { id: existingIngredient.id },
+    data: {
+      name: ingredient.name,
+      measuredAs: ingredient.measuredAs,
+      plural: ingredient.plural,
+      aka: {
+        deleteMany: {
+      }
+    },
+  }});
+  const upsertedRecord = {...(await p), type: "StoreBoughtIngredient" as const};
+  await executionContext.assignSymbol(ingredient.id, upsertedRecord.type, upsertedRecord.id);
+  for (const aka of (ingredient.aka ? ingredient.aka : [])) {
+    await executionContext.prisma.storeBoughtIngredientSynonym.create({
+      data: {
+        storeBoughtIngredientId: upsertedRecord.id,
+        synonym: aka
+      },
+    });
+  }
+  return upsertedRecord;
 }

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { resetTestDB } from "../src/__generated__/prismaClient/sql";
 import { executeDML } from "../src/data/cuninalistDMLInterpreter";
 import { prisma } from "../src/data/dao/extendedPrisma";
+import {StoreBoughtIngredient} from '../src/__generated__/prismaClient'
 
 beforeAll(async () => {
   await prisma.$queryRawTyped(resetTestDB());
@@ -109,6 +110,54 @@ describe("Unit of mesaure dsl", () => {
 
 describe('Ingredient dsl', () => {
   it('Define a simple ingredient', async () => {
+    const dsl = `ingredient butter measuredAs weight`;
+    await executeDML(prisma, dsl);
+    const namedEntity = await prisma.namedEntity.findUnique({
+      where: { contextId_id: { contextId: "public", id: "butter" } },
+    });
+    expect(namedEntity).toBeDefined();
+    expect(namedEntity).not.toBeNull();
+    expect(namedEntity.id).toBe("butter");
+    expect(namedEntity.contextId).toBe("public");
+    expect(namedEntity.recordType).toBe("StoreBoughtIngredient");
+    const ingredient = await prisma.storeBoughtIngredient.findUnique({
+      where: { id: namedEntity.recordId },
+    });
+    const expectedIngredient: Partial<StoreBoughtIngredient>  = {
+      gblId: "butter",
+      name: "butter",
+      measuredAs: "weight",
+    }
+    expect(ingredient).toMatchObject(expectedIngredient);
+  });
 
+  it('Define a complete ingredient', async () => {
+    const dsl = `ingredient butter
+      fullname 'butter stick'
+      plural 'butter sticks'
+      aka 'block of butter', 'fat of milk'
+      measuredAs weight
+      `;
+    await executeDML(prisma, dsl);
+    const namedEntity = await prisma.namedEntity.findUnique({
+      where: { contextId_id: { contextId: "public", id: "butter" } },
+    });
+    expect(namedEntity).toBeDefined();
+    expect(namedEntity).not.toBeNull();
+    expect(namedEntity.id).toBe("butter");
+    expect(namedEntity.contextId).toBe("public");
+    expect(namedEntity.recordType).toBe("StoreBoughtIngredient");
+    const ingredient = await prisma.storeBoughtIngredient.findUnique({
+      include: {'aka': true},
+      where: { id: namedEntity.recordId },
+    });
+    const expectedIngredient: Partial<StoreBoughtIngredient & {aka: Array<{synonym: string}>}> = {
+      gblId: "butter",
+      name: "butter stick",
+      measuredAs: "weight",
+      plural: "butter sticks",
+      aka: [{synonym: 'block of butter'}, {synonym: 'fat of milk'}],
+    }
+    expect(ingredient).toMatchObject(expectedIngredient);
   })
 });

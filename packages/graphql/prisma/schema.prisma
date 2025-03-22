@@ -145,6 +145,8 @@ model StoreBoughtIngredient {
   id          String  @id @default(cuid())
   gblId       String
   name        String
+  measuredAs  String
+  plural      String?
   description String?
   ontologyUrl String?
 
@@ -153,7 +155,16 @@ model StoreBoughtIngredient {
 
   inRecipes RecipeIngredient[]
 
+  aka StoreBoughtIngredientSynonym[]
+
   @@index([gblId], name: "ixStoreBoughtIngredientGblId")
+}
+
+model StoreBoughtIngredientSynonym {
+  id                      String                @id @default(cuid())
+  storeBoughtIngredientId String
+  synonym                 String
+  storeBoughtIngredient   StoreBoughtIngredient @relation(fields: [storeBoughtIngredientId], references: [id])
 }
 
 model StepInputIngredient {

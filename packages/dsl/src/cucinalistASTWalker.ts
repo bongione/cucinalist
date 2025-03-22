@@ -445,7 +445,7 @@ export class CucinalistASTWalker extends CucinalistListener {
     const ingredient: BoughtIngredient = {
       type: "BoughtIngredient",
       id: this._ctxValues.get(ctx._ingredientId) as string,
-      name: this._ctxValues.get(ctx._ingredientId) as string,
+      name: (this._ctxValues.get(ctx._fullname) || this._ctxValues.get(ctx._ingredientId)) as string,
       measuredAs: this._ctxValues.get(ctx._measuredAs) as string,
       plural: ctx._plural ? this._ctxValues.get(ctx._plural) as string : undefined,
       aka: ctx._akaList ? this._ctxValues.get(ctx._akaList) as string[] : undefined,
