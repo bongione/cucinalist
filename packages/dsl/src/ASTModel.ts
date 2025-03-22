@@ -106,8 +106,18 @@ export interface IncludeStatement {
   fileToInclude: string;
 }
 
+export interface BoughtIngredient {
+  type: "BoughtIngredient";
+  id: string;
+  name: string;
+  plural?: string;
+  aka?: string[];
+  measuredAs: string;
+}
+
 export type CucinalistDMLStatement =
   | UnitOfMeasure
+  | BoughtIngredient
   | Recipe
   | Meal
   | CreateContext

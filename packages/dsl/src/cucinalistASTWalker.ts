@@ -13,8 +13,8 @@ import {
   CreateContext,
   IncludeStatement,
   SwitchToContext,
-  CucinalistDslAST,
-} from "./ASTModel";
+  CucinalistDslAST, BoughtIngredient
+} from './ASTModel'
 import {
   ActiveMinutesTransitionContext,
   AmountRangeContext,
@@ -26,7 +26,7 @@ import {
   FloatAmountContext,
   IdContext,
   IdListContext,
-  IncludeContext,
+  IncludeContext, IngredientContext,
   IngredientLineContext,
   IngredientsContext,
   IntAmountContext,
@@ -48,8 +48,8 @@ import {
   StringListContext,
   UnitOfMeasureContext,
   UnquotedStringContext,
-  WhenConditionContext,
-} from "./__generated__/cucinalistParser";
+  WhenConditionContext
+} from './__generated__/cucinalistParser'
 
 type TransitionData = Pick<
   CookingStep,
@@ -81,7 +81,7 @@ export class CucinalistASTWalker extends CucinalistListener {
   ): RecipeIngredient | CookingStepOutput {
     const el = this._ingredientIdPointerMap.get(ingOrOutputId);
     if (!el) {
-      throw new Error(`Cooking step input with id  ${ingOrOutputId} not found`);
+      throw new Error(`Unrecognized cooking step ingredient: ${ingOrOutputId}`);
     }
     return el;
   }
@@ -265,7 +265,7 @@ export class CucinalistASTWalker extends CucinalistListener {
 
   exitActiveMinutesTransition = (ctx: ActiveMinutesTransitionContext) => {
     const transitionData: TransitionData = {
-      activeMinutes: ctx._activeMinutes.text
+      activeMinutes: ctx._activeMinutes.text && ctx._activeMinutes.start >= 0
         ? parseInt(ctx._activeMinutes.text)
         : 0,
       inactiveMinutes: 0,
@@ -277,7 +277,7 @@ export class CucinalistASTWalker extends CucinalistListener {
   exitParallellMinutesTransition = (ctx: ParallellMinutesTransitionContext) => {
     const transitionData: TransitionData = {
       activeMinutes: 0,
-      inactiveMinutes: ctx._parallellMinutes
+      inactiveMinutes: ctx._parallellMinutes && ctx._parallellMinutes.start >= 0
         ? parseInt(ctx._parallellMinutes.text)
         : 0,
       keepAnEyeMinutes: 0,
@@ -298,7 +298,7 @@ export class CucinalistASTWalker extends CucinalistListener {
     const transitionData: TransitionData = {
       activeMinutes: 0,
       inactiveMinutes: 0,
-      keepAnEyeMinutes: ctx._keepEyelMinutes
+      keepAnEyeMinutes: ctx._keepEyelMinutes && ctx._keepEyelMinutes.start >= 0
         ? parseInt(ctx._keepEyelMinutes.text)
         : 0,
     };
@@ -440,6 +440,18 @@ export class CucinalistASTWalker extends CucinalistListener {
       this._ctxValues.set(ctx, meal);
     }
   };
+
+  exitIngredient = (ctx: IngredientContext) => {
+    const ingredient: BoughtIngredient = {
+      type: "BoughtIngredient",
+      id: this._ctxValues.get(ctx._ingredientId) as string,
+      name: this._ctxValues.get(ctx._ingredientId) as string,
+      measuredAs: this._ctxValues.get(ctx._measuredAs) as string,
+      plural: ctx._plural ? this._ctxValues.get(ctx._plural) as string : undefined,
+      aka: ctx._akaList ? this._ctxValues.get(ctx._akaList) as string[] : undefined,
+    }
+    this._ctxValues.set(ctx, ingredient);
+  }
 
   exitInclude = (ctx: IncludeContext) => {
     const include: IncludeStatement = {

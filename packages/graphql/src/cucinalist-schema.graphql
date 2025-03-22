@@ -48,7 +48,9 @@ type BoughtIngredient {
   typename: String!
   id: ID!
   name: String!
-  units: [UnitOfMeasure!]!
+  plural: String
+  aka: [String!]!
+  measuredAs: [MeasuringFeature!]!
   ontologyUrls: [String!]
 }
 

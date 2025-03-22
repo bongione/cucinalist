@@ -3,11 +3,16 @@ parser grammar cucinalistParser;
 options {tokenVocab=cucinalistLexer;}
 
 program: (statement)*;
-statement: recipe | unitOfMeasure | meal | include | context | createContext;
+statement: recipe | unitOfMeasure | ingredient | meal | include | context | createContext;
 
 include: INCLUDE fileToInclude=quotedString;
 context: CONTEXT contextId=id;
 createContext: CREATE_CONTEXT AND_SWITCH? contextId=id (PARENT parentId=id)?;
+
+ingredient: INGREDIENT ingredientId=id (FULLNAME fullname=quotedString)?
+    (PLURAL plural=string)?
+    (AKA akaList=stringList)?
+    MEASURED_AS measuredAs=id;
 
 recipe: RECIPE reciepeId=id (FULLNAME fullname=quotedString)? serving ingredients steps;
 
@@ -39,12 +44,11 @@ idList: id (COMMA id)* (AND id)?;
 
 id: quotedString | unquotedString;
 
-unitOfMeasure: UNITOFMEASURE name=id LCURLY
+unitOfMeasure: UNITOFMEASURE name=id
     MEASURING measuring=id
     DEFAULTSYMBOL  (defaultSymbol=string)?
     (PLURAL plural=string)?
-    (AKA akaList=stringList)?
-RCURLY;
+    (AKA akaList=stringList)?;
 stringList: string (COMMA string)*;
 string: unquotedString | quotedString;
 

@@ -3,11 +3,10 @@ import { parseCucinalistDsl, UnitOfMeasure } from "../src";
 
 describe("Simple units of measure", () => {
   it("Grams", () => {
-    const dsl = `unitOfMeasure gram {
+    const dsl = `unitOfMeasure gram
     measuring weight
     defaultSymbol g
-    aka gram, grams
-}`;
+    aka gram, grams`;
     const parsed = parseCucinalistDsl(dsl);
     expect(parsed.length).toBe(1);
     const expectedUnit: UnitOfMeasure = {
@@ -22,12 +21,12 @@ describe("Simple units of measure", () => {
   });
 
   it('All fields filled in', () => {
-    const dsl = `unitOfMeasure gram {
+    const dsl = `unitOfMeasure gram
     measuring weight
     defaultSymbol g
     plural grams
     aka gram, grams, g
-}`;
+`;
     const parsed = parseCucinalistDsl(dsl);
     expect(parsed.length).toBe(1);
     const expectedUnit: UnitOfMeasure = {
@@ -43,10 +42,10 @@ describe("Simple units of measure", () => {
   });
 
   it("Minimal set of fields", () => {
-    const dsl = `unitOfMeasure item {
+    const dsl = `unitOfMeasure item
     measuring count
     defaultSymbol
-}`;
+`;
     const parsed = parseCucinalistDsl(dsl);
     expect(parsed.length).toBe(1);
     const expectedUnit: UnitOfMeasure = {

@@ -9,3 +9,5 @@ migrations/
 dev.db*
 /packages/graphql/app/
 /packages/cucinalist-lang/out/
+coverage/
+/gen

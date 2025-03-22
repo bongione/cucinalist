@@ -106,3 +106,9 @@ describe("Unit of mesaure dsl", () => {
     });
   });
 });
+
+describe('Ingredient dsl', () => {
+  it('Define a simple ingredient', async () => {
+
+  })
+});

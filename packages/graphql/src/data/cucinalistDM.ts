@@ -322,6 +322,7 @@ export async function processCreateUnitOfMeasureStatement(
           data: {
             gblId: statement.id,
             name: statement.name,
+            defaultSymbol: statement.defaultSymbol,
             plural: statement.symbolPlural ? statement.symbolPlural : undefined,
             measuring:
               Object.values(MeasuringFeature).findIndex(

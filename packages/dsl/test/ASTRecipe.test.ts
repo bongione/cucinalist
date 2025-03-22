@@ -70,15 +70,15 @@ describe("Simple recipes", () => {
           - (optional) 2 spoons parmesanCheese;
       steps
           - 'bring to the boil' salt and water -[15]-> boiledSaltedWater;
-          - 'chop finely' redHotChilliPeppers -2-> choppedChillies;
-          - 'chop finely' garlic -2-> choppedGarlic;
-          - 'shallow-fry' choppedChillies and choppedGarlic in 'extra virge olive oil' -[20]-> condiment;
+          - 'chop finely' redHotChilliPeppers --> choppedChillies;
+          - 'chop finely' garlic -(2)-> choppedGarlic;
+          - 'shallow-fry' choppedChillies and choppedGarlic in 'extra virge olive oil' -[]-> condiment;
           - when boiledSaltedWater
-              - add spaghetti to boiledSaltedWater -[10]-> cookingPasta;
+              - add spaghetti to boiledSaltedWater -()-> cookingPasta;
           - when cookingPasta 'is tender'
               - (optional) reserve boiledSaltedWater from cookingPasta -> reservedWater;
               - drain cookingPasta -> cookedPasta;
-          - combine cookedPasta and condiment -> pastaWithCondiment;
+          - combine cookedPasta and condiment -2-> pastaWithCondiment;
           - (optional) mix parmesanCheese, pastaWithCondiment  and reservedWater;
           - serve pastaWithCondiment -> SpaghettiAglioOlioEPeperoncino;`;
     const expectedAst: CucinalistDslAST = [
@@ -193,7 +193,7 @@ describe("Simple recipes", () => {
             ],
           },
           {
-            // - 'chop finely' redHotChilliPeppers -2-> choppedChillies;
+            // - 'chop finely' redHotChilliPeppers --> choppedChillies;
             type: "CookingStep",
             processId: "chop finely",
             preconditions: [],
@@ -207,7 +207,7 @@ describe("Simple recipes", () => {
                 },
               },
             ],
-            activeMinutes: 2,
+            activeMinutes: 0,
             keepAnEyeMinutes: 0,
             inactiveMinutes: 0,
             produces: [
@@ -218,7 +218,7 @@ describe("Simple recipes", () => {
             ],
           },
           {
-            // - 'chop finely' garlic -2-> choppedGarlic;
+            // - 'chop finely' garlic -(2)-> choppedGarlic;
             type: "CookingStep",
             processId: "chop finely",
             preconditions: [],
@@ -232,8 +232,8 @@ describe("Simple recipes", () => {
                 },
               },
             ],
-            activeMinutes: 2,
-            keepAnEyeMinutes: 0,
+            activeMinutes: 0,
+            keepAnEyeMinutes: 2,
             inactiveMinutes: 0,
             produces: [
               {
@@ -243,7 +243,7 @@ describe("Simple recipes", () => {
             ],
           },
           {
-            // - 'shallow-fry' choppedChillies and choppedGarlic in 'extra virge olive oil' -[20]-> condiment;
+            // - 'shallow-fry' choppedChillies and choppedGarlic in 'extra virge olive oil' -[]-> condiment;
             type: "CookingStep",
             processId: "shallow-fry",
             preconditions: [],
@@ -267,7 +267,7 @@ describe("Simple recipes", () => {
             ],
             activeMinutes: 0,
             keepAnEyeMinutes: 0,
-            inactiveMinutes: 20,
+            inactiveMinutes: 0,
             medium: {
               type: "RecipeIngredient",
               ingredientId: "extra virge olive oil",
@@ -285,7 +285,7 @@ describe("Simple recipes", () => {
           },
           {
             // - when boiledSaltedWater
-            //     - add spaghetti to boiledSaltedWater -[10]-> cookingPasta;
+            //     - add spaghetti to boiledSaltedWater -()-> cookingPasta;
             type: "CookingStep",
             processId: "add",
             preconditions: [
@@ -318,7 +318,7 @@ describe("Simple recipes", () => {
             },
             activeMinutes: 0,
             keepAnEyeMinutes: 0,
-            inactiveMinutes: 10,
+            inactiveMinutes: 0,
             produces: [
               {
                 type: "CookingStepOutput",
@@ -389,7 +389,7 @@ describe("Simple recipes", () => {
             ],
           },
           {
-            // - combine cookedPasta and condiment -> pastaWithCondiment;
+            // - combine cookedPasta and condiment -2-> pastaWithCondiment;
             type: "CookingStep",
             processId: "combine",
             preconditions: [],
@@ -403,7 +403,7 @@ describe("Simple recipes", () => {
                 outputId: "condiment",
               },
             ],
-            activeMinutes: 1,
+            activeMinutes: 2,
             keepAnEyeMinutes: 0,
             inactiveMinutes: 0,
             produces: [

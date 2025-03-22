@@ -14,7 +14,8 @@
     "clean": "rm -rf dist",
     "generate-ts-parser": "antlr -Xexact-output-dir src/cucinalistLexer.g4 -Dlanguage=TypeScript -o src/__generated__ && antlr -Xexact-output-dir src/cucinalistParser.g4 -Dlanguage=TypeScript -o src/__generated__ -lib src/__generated__",
     "generate-java-parser": "antlr -Xexact-output-dir src/cucinalistLexer.g4 -o src/__generated__ && antlr -Xexact-output-dir src/cucinalistParser.g4 -o src/__generated__ -lib src/__generated__ && javac src/__generated__/*.java",
-    "test": "vitest"
+    "test": "vitest",
+    "test:cover": "vitest --coverage"
   },
   "repository": {
     "type": "git",
