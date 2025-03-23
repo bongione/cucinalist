@@ -4,6 +4,7 @@ import { resetTestDB } from "../src/__generated__/prismaClient/sql";
 import { createAndInitExecutionContextManager } from "../src/data/executionContext";
 import { AssignableModels } from "../src/data/dmlTypes";
 import { prisma } from "../src/data/dao/extendedPrisma";
+import { createPrismaProvider } from "../src/data/dao/PrismaProvider";
 
 beforeAll(async () => {
   await prisma.$queryRawTyped(resetTestDB());
@@ -17,13 +18,15 @@ beforeEach(async () => {
 
 describe("With empty name table", () => {
   it("Return unresolved symbol", async () => {
-    const ctx = await createAndInitExecutionContextManager(prisma);
+    const prismaProvider = createPrismaProvider(prisma);
+    const ctx = await createAndInitExecutionContextManager(prismaProvider);
     const symbol = await ctx.resolveSymbol("test");
     expect(symbol.type).toBe("UnresolvedId");
   });
 
   it("Assign symbol", async () => {
-    const ctx = await createAndInitExecutionContextManager(prisma);
+    const prismaProvider = createPrismaProvider(prisma);
+    const ctx = await createAndInitExecutionContextManager(prismaProvider);
     const model: AssignableModels["UnitOfMeasure"] =
       await prisma.unitOfMeasure.create({
         data: {
@@ -43,7 +46,8 @@ describe("With empty name table", () => {
   });
 
   it("Reassign symbol on same context should be ok with same id", async () => {
-    const ctx = await createAndInitExecutionContextManager(prisma);
+    const prismaProvider = createPrismaProvider(prisma);
+    const ctx = await createAndInitExecutionContextManager(prismaProvider);
     const model = await prisma.unitOfMeasure.create({
       data: {
         name: "test",
@@ -71,7 +75,8 @@ describe("With empty name table", () => {
   it("Reassign symbol on same context should fail with different id", async ({
     expect,
   }) => {
-    const ctx = await createAndInitExecutionContextManager(prisma);
+    const prismaProvider = createPrismaProvider(prisma);
+    const ctx = await createAndInitExecutionContextManager(prismaProvider);
     const model = await prisma.unitOfMeasure.create({
       data: {
         name: "test",

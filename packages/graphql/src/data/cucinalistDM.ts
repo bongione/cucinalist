@@ -34,7 +34,7 @@ export async function processRecipeStatement(
   ]);
 
   const recipeRecord = await (existingRecord === null
-    ? executionContext.prisma.recipe.create({
+    ? executionContext.prisma().recipe.create({
         data: {
           name: recipe.name,
           description: recipe.name,
@@ -42,7 +42,7 @@ export async function processRecipeStatement(
           gblId: recipe.id,
         },
       })
-    : executionContext.prisma.recipe.update({
+    : executionContext.prisma().recipe.update({
         where: { id: existingRecord.id },
         data: {
           name: recipe.name,
@@ -79,7 +79,7 @@ async function findOrCreateStoreBoughtIngredient(
     await executionContext.resolveSymbol(ingredientId);
   if (recipeOrStoreBoughtIngredient.type === "UnresolvedId") {
     const newIngredient =
-      await executionContext.prisma.storeBoughtIngredient.create({
+      await executionContext.prisma().storeBoughtIngredient.create({
         data: {
           gblId: ingredientId,
           name: ingredientId,
@@ -112,7 +112,7 @@ async function findOrCreateUnitOfMeasure(
 ) {
   let unitOfMeasure = await executionContext.resolveSymbol(unitId);
   if (unitOfMeasure.type === "UnresolvedId") {
-    const unitOfMeasure = await executionContext.prisma.unitOfMeasure.create({
+    const unitOfMeasure = await executionContext.prisma().unitOfMeasure.create({
       data: {
         gblId: unitId,
         name: unitId,
@@ -136,7 +136,7 @@ async function findOrCreateCookingTechnique(
 ) {
   let technique = await executionContext.resolveSymbol(techniqueId);
   if (technique.type === "UnresolvedId") {
-    const technique = await executionContext.prisma.cookingTechnique.create({
+    const technique = await executionContext.prisma().cookingTechnique.create({
       data: {
         gblId: techniqueId,
         name: techniqueId,
@@ -172,7 +172,7 @@ async function processRecipeIngredients(
       ri.amount.unit,
     );
 
-    const riRecord = await executionContext.prisma.recipeIngredient.create({
+    const riRecord = await executionContext.prisma().recipeIngredient.create({
       data: {
         recipeId: recipeRecord.id,
         storeBoughtIngredientId:
@@ -209,7 +209,7 @@ async function processRecipeSteps(
       executionContext,
       step.processId,
     );
-    const stepRecord = await executionContext.prisma.cookingStep.create({
+    const stepRecord = await executionContext.prisma().cookingStep.create({
       data: {
         recipeId: recipeRecord.id,
         activeMinutes: step.activeMinutes,
@@ -228,7 +228,7 @@ async function processRecipeSteps(
         throw new Error(`Ingredient ${inputIngredient} not found`);
       }
       if (outputOrIng.type === "RecipeIngredient") {
-        await executionContext.prisma.stepInputIngredient.create({
+        await executionContext.prisma().stepInputIngredient.create({
           data: {
             cookingStepId: stepRecord.id,
             nthInput: j,
@@ -236,7 +236,7 @@ async function processRecipeSteps(
           },
         });
       } else if (outputOrIng.type === "StepOutputIngredient") {
-        await executionContext.prisma.stepInputIngredient.create({
+        await executionContext.prisma().stepInputIngredient.create({
           data: {
             cookingStepId: stepRecord.id,
             nthInput: j,
@@ -251,7 +251,7 @@ async function processRecipeSteps(
       const outputIngredient = step.produces[j];
 
       const outputRecord =
-        await executionContext.prisma.stepOutputIngredient.create({
+        await executionContext.prisma().stepOutputIngredient.create({
           data: {
             cookingStepId: stepRecord.id,
             nthOutput: j,
@@ -267,7 +267,7 @@ async function processRecipeSteps(
     // Process step preconditions
     for (let j = 0; j < step.preconditions.length; j++) {
       const precondition = step.preconditions[j];
-      await executionContext.prisma.stepPrecondition.create({
+      await executionContext.prisma().stepPrecondition.create({
         data: {
           cookingStepId: stepRecord.id,
           nthPrecondition: j + 1,
@@ -282,14 +282,14 @@ async function processRecipeSteps(
           throw new Error(`Ingredient ${ingredientNeeded} not found`);
         }
         if (ingredientRecord.type === "RecipeIngredient") {
-          await executionContext.prisma.stepPreconditionInputIngredient.create({
+          await executionContext.prisma().stepPreconditionInputIngredient.create({
             data: {
               stepPreconditionId: stepRecord.id,
               stepInputIngredientId: ingredientRecord.id,
             },
           });
         } else if (ingredientRecord.type === "StepOutputIngredient") {
-          await executionContext.prisma.stepPreconditionInputIngredient.create({
+          await executionContext.prisma().stepPreconditionInputIngredient.create({
             data: {
               stepPreconditionId: stepRecord.id,
               stepInputIngredientId: ingredientRecord.id,
@@ -319,7 +319,7 @@ export async function processCreateUnitOfMeasureStatement(
 
   const p =
     existingUnit === null
-      ? executionContext.prisma.unitOfMeasure.create({
+      ? executionContext.prisma().unitOfMeasure.create({
           data: {
             gblId: statement.id,
             name: statement.name,
@@ -333,7 +333,7 @@ export async function processCreateUnitOfMeasureStatement(
                 : (statement.measuring as MeasuringFeature),
           },
         })
-      : executionContext.prisma.unitOfMeasure.update({
+      : executionContext.prisma().unitOfMeasure.update({
           where: { id: existingUnit.id },
           data: {
             name: statement.name,
@@ -355,7 +355,7 @@ export async function processCreateUnitOfMeasureStatement(
 
   const unitRecord = await p;
   for (const label of statement.aka ? statement.aka : []) {
-    await executionContext.prisma.unitOfMeasureAcceptedLabel.create({
+    await executionContext.prisma().unitOfMeasureAcceptedLabel.create({
       data: {
         unitOfMeasureId: unitRecord.id,
         label,
@@ -375,14 +375,14 @@ export async function processBoughtIngredientStatement(ingredient: BoughtIngredi
     ingredient.id,
     ["StoreBoughtIngredient"],
   );
-  const p = existingIngredient === null ? executionContext.prisma.storeBoughtIngredient.create({
+  const p = existingIngredient === null ? executionContext.prisma().storeBoughtIngredient.create({
     data: {
       gblId: ingredient.id,
       name: ingredient.name,
       measuredAs: ingredient.measuredAs,
       plural: ingredient.plural,
     },
-  }) : executionContext.prisma.storeBoughtIngredient.update({
+  }) : executionContext.prisma().storeBoughtIngredient.update({
     where: { id: existingIngredient.id },
     data: {
       name: ingredient.name,
@@ -396,7 +396,7 @@ export async function processBoughtIngredientStatement(ingredient: BoughtIngredi
   const upsertedRecord = {...(await p), type: "StoreBoughtIngredient" as const};
   await executionContext.assignSymbol(ingredient.id, upsertedRecord.type, upsertedRecord.id);
   for (const aka of (ingredient.aka ? ingredient.aka : [])) {
-    await executionContext.prisma.storeBoughtIngredientSynonym.create({
+    await executionContext.prisma().storeBoughtIngredientSynonym.create({
       data: {
         storeBoughtIngredientId: upsertedRecord.id,
         synonym: aka

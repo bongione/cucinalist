@@ -4,6 +4,14 @@ import { prisma } from "./dao/extendedPrisma";
 type Prisma = typeof prisma;
 export type PrismaInTx = Omit<typeof prisma, runtime.ITXClientDenyList>;
 
+export interface PrismaProvider {
+  prisma: () => PrismaInTx;
+}
+
+export interface PrismaTxProvider extends PrismaProvider {
+  tx: <RT>(cb: (prisma: PrismaInTx) => Promise<RT>) => Promise<RT>;
+}
+
 export type CucinalistModels = {
   Context: Awaited<ReturnType<Prisma["context"]["findUnique"]>>;
   NamedEntity: Awaited<ReturnType<Prisma["namedEntity"]["findUnique"]>>;
@@ -48,8 +56,7 @@ export interface UnresolvedId {
   id: string;
 }
 
-export interface ExecutionContext {
-  readonly prisma: PrismaInTx;
+export interface ExecutionContext extends PrismaProvider {
   readonly contextId: string;
   readonly parentContext: ExecutionContext | null;
 
@@ -85,4 +92,9 @@ export interface ExecutionContextManager extends ExecutionContext {
   ): Promise<ExecutionContext>;
 
   switchToContext(id: string): Promise<ExecutionContext>;
+}
+
+export interface CucinalistDMLInterpreter {
+  readonly executionContext: ExecutionContextManager;
+  executeDML: (dslStatements: string) => Promise<CucinalistModels[keyof CucinalistModels][]>;
 }

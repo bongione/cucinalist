@@ -5,49 +5,60 @@ import {
   SwitchToContext,
 } from "@cucinalist/dsl";
 import { createAndInitExecutionContextManager } from "./executionContext";
-import {AssignableModels, ExecutionContextManager} from './dmlTypes'
+import {AssignableModels, CucinalistDMLInterpreter, ExecutionContextManager} from './dmlTypes'
 import {
   processBoughtIngredientStatement,
   processCreateUnitOfMeasureStatement,
   processRecipeStatement
 } from './cucinalistDM'
+import { prisma  as prismaClient} from "./dao/extendedPrisma";
+import {createPrismaProvider} from './dao/PrismaProvider'
 
-export async function executeDML(prismaClient: PrismaClient, dmlStr: string) {
-  const statements = parseCucinalistDsl(dmlStr);
-  const newOrUpdatedEntities: AssignableModels[keyof AssignableModels][] = [];
+let interpreter: CucinalistDMLInterpreter | null = null;
 
-  await prismaClient.$transaction(async (prisma) => {
-    const executionContext = await createAndInitExecutionContextManager(prisma);
-    for (const statement of statements) {
-      if (statement.type === "CreateContext") {
-        await processCreateContextStatement(statement, executionContext);
-      } else if (statement.type === "IncludeStatement") {
-        throw new Error("Include statements are not supported in this context");
-      } else if (statement.type === "SwitchToContext") {
-        await processSwitchToContextStatement(statement, executionContext);
-      } else if (statement.type === "Recipe") {
-        const recipe = await processRecipeStatement(
-          statement,
-          executionContext,
-        );
-        newOrUpdatedEntities.push(recipe);
-      } else if (statement.type === 'UnitOfMeasure') {
-        const uom = await processCreateUnitOfMeasureStatement(
-          statement,
-          executionContext,
-        );
-        newOrUpdatedEntities.push(uom);
-      } else if (statement.type === 'BoughtIngredient') {
-        const ingredient = await processBoughtIngredientStatement(statement, executionContext);
-        newOrUpdatedEntities.push(ingredient);
-      } else if (statement.type === 'SingleCourseMeal' || statement.type === 'MultiCourseMeal') {
-        // Skip for now, no op, semantics to be decided
-      } else {
-        throw new Error(`Unknown statement type`);
-      }
-    }
-  });
-  return newOrUpdatedEntities;
+export async function getCucinalistDMLInterpreter() {
+  const prismaProvider = createPrismaProvider(prismaClient);
+  const executionContext = await createAndInitExecutionContextManager(prismaProvider);
+  interpreter = {
+    executionContext,
+    executeDML: async (dmlStr: string) => {
+      const statements = parseCucinalistDsl(dmlStr);
+      const newOrUpdatedEntities: AssignableModels[keyof AssignableModels][] = [];
+
+      await prismaProvider.tx(async () => {
+        for (const statement of statements) {
+          if (statement.type === "CreateContext") {
+            await processCreateContextStatement(statement, executionContext);
+          } else if (statement.type === "IncludeStatement") {
+            throw new Error("Include statements are not supported in this context");
+          } else if (statement.type === "SwitchToContext") {
+            await executionContext.switchToContext(statement.id)
+          } else if (statement.type === "Recipe") {
+            const recipe = await processRecipeStatement(
+              statement,
+              executionContext,
+            );
+            newOrUpdatedEntities.push(recipe);
+          } else if (statement.type === 'UnitOfMeasure') {
+            const uom = await processCreateUnitOfMeasureStatement(
+              statement,
+              executionContext,
+            );
+            newOrUpdatedEntities.push(uom);
+          } else if (statement.type === 'BoughtIngredient') {
+            const ingredient = await processBoughtIngredientStatement(statement, executionContext);
+            newOrUpdatedEntities.push(ingredient);
+          } else if (statement.type === 'SingleCourseMeal' || statement.type === 'MultiCourseMeal') {
+            // Skip for now, no op, semantics to be decided
+          } else {
+            throw new Error(`Unknown statement type`);
+          }
+        }
+      });
+      return newOrUpdatedEntities;
+    },
+  };
+  return interpreter;
 }
 
 /**
@@ -62,25 +73,16 @@ async function processCreateContextStatement(
   statement: CreateContext,
   executionContext: ExecutionContextManager,
 ) {
-  const parentContext = await executionContext.resolveSymbol(
-    statement.parentContext,
+  const parentCtxName = statement.parentContext || 'public';
+  const parentContext = await executionContext.prisma().context.findUnique(
+    {where: {id: parentCtxName}}
   );
-  if (parentContext.type === "UnresolvedId") {
-    throw new Error(`Parent context ${statement.parentContext} not found`);
-  }
   const newContext = await executionContext.createCucinalistContext(
     statement.id,
-    statement.parentContext,
+    parentContext.id,
   );
   if (statement.switchToContext) {
     await executionContext.switchToContext(statement.id);
   }
   return newContext;
-}
-
-async function processSwitchToContextStatement(
-  statement: SwitchToContext,
-  executionContext: ExecutionContextManager,
-) {
-  return executionContext.switchToContext(statement.id);
 }

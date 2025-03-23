@@ -1,9 +1,5 @@
-import type {PrismaClient} from './dao/extendedPrisma'
-import {ExecutionContext} from './dmlTypes'
-
-export {prisma} from './dao/extendedPrisma';
+import {CucinalistDMLInterpreter, ExecutionContext} from './dmlTypes'
 
 export interface ApolloContext {
-  prisma: PrismaClient;
-  resolverContext: ExecutionContext;
+  dmlInterpreter: CucinalistDMLInterpreter;
 }

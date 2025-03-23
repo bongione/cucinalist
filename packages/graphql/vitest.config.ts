@@ -14,5 +14,8 @@ export default defineConfig({
       }
     },
     include: ["test/**/*.test.ts"],
+    coverage: {
+      exclude: ["src/__generated__/**", "app/**", "prisma/**", "vitest.config.ts"],
+    }
   },
 });

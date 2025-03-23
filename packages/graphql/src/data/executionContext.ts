@@ -3,36 +3,36 @@ import {
   AssignableModels,
   ExecutionContext,
   ExecutionContextManager,
-  PrismaInTx,
-} from "./dmlTypes";
+  PrismaProvider
+} from './dmlTypes'
 
-export async function createAndInitExecutionContextManager(prisma: PrismaInTx) {
+export async function createAndInitExecutionContextManager(prisma: PrismaProvider) {
   const cm = new ContextManager(prisma);
   await cm.initialize();
   return cm as ExecutionContextManager;
 }
 
 function createSymbolsContext(
-  prisma: PrismaInTx,
+  prismaProvider:PrismaProvider,
   contextName: string,
-  parentContext: ExecutionContext | null
+  parentContext: ExecutionContext | null,
 ): ExecutionContext {
-  return new SymbolTableContext(prisma, contextName, parentContext);
+  return new SymbolTableContext(prismaProvider, contextName, parentContext);
 }
 
 class SymbolTableContext implements ExecutionContext {
   private parentCtx: ExecutionContext | null;
   private contextName: string;
-  private _prisma: PrismaInTx;
+  private _prismaProvider: PrismaProvider;
 
   constructor(
-    prisma: PrismaInTx,
+    prismaProvider: PrismaProvider,
     contextName: string,
-    parentContext: ExecutionContext | null
+    parentContext: ExecutionContext | null,
   ) {
     this.contextName = contextName;
     this.parentCtx = parentContext;
-    this._prisma = prisma;
+    this._prismaProvider = prismaProvider;
   }
 
   public get contextId() {
@@ -43,12 +43,12 @@ class SymbolTableContext implements ExecutionContext {
     return this.parentCtx;
   }
 
-  public get prisma() {
-    return this._prisma;
+  public prisma() {
+    return this._prismaProvider.prisma();
   }
 
   private async resolveLocalSymbolName(id: string) {
-    let r = await this.prisma.namedEntity.findUnique({
+    let r = await this.prisma().namedEntity.findUnique({
       where: {
         contextId_id: { contextId: this.contextName, id },
       },
@@ -81,13 +81,13 @@ class SymbolTableContext implements ExecutionContext {
   }
 
   async localResolveSymbol(id, expectedTypes) {
-    let r = await this.prisma.namedEntity.findUnique({
+    let r = await this.prisma().namedEntity.findUnique({
       where: {
         contextId_id: { contextId: this.contextName, id },
       },
     });
-    if (r) {
-      return this.prisma[r.recordType].findUnique({
+    if (r && r.recordId) {
+      return this.prisma()[r.recordType].findUnique({
         where: { id: r.recordId },
       });
     }
@@ -112,16 +112,16 @@ class SymbolTableContext implements ExecutionContext {
         localNamedEntity.recordId !== recordId)
     ) {
       throw new Error(
-        `Cannot reassign id ${id} in the same context with different information`
+        `Cannot reassign id ${id} in the same context with different information`,
       );
     }
     const parentModel = await this.resolveAncestorSymbol(id);
     if (parentModel && parentModel.type !== recordType) {
       throw new Error(
-        `Cannot assign id "${id}" with different type from an ancestor context`
+        `Cannot assign id "${id}" with different type from an ancestor context`,
       );
     }
-    await this.prisma.namedEntity.create({
+    await this.prisma().namedEntity.create({
       data: {
         contextId: this.contextName,
         id,
@@ -133,7 +133,7 @@ class SymbolTableContext implements ExecutionContext {
   }
 
   async localUnassignSymbol(id) {
-    await this.prisma.namedEntity.delete({
+    await this.prisma().namedEntity.delete({
       where: {
         contextId_id: { contextId: this.contextName, id },
       },
@@ -142,7 +142,7 @@ class SymbolTableContext implements ExecutionContext {
 }
 
 class ContextManager implements ExecutionContextManager {
-  private _prisma: PrismaInTx;
+  private _prismaProvider: PrismaProvider;
   private initialised = false;
   private contextsMap = new Map<
     string,
@@ -153,39 +153,41 @@ class ContextManager implements ExecutionContextManager {
   >();
   private currentContextId: string = "";
 
-  constructor(prisma: PrismaInTx) {
-    this._prisma = prisma;
+  constructor(prismaProvider: PrismaProvider) {
+    this._prismaProvider = prismaProvider;
   }
 
   public async initialize() {
     const baseContexts = await Promise.all([
-      this.prisma.context.findUnique({
+      this._prismaProvider.prisma().context.findUnique({
         where: { id: "root" },
       }),
-      this.prisma.context.findUnique({
+      this._prismaProvider.prisma().context.findUnique({
         where: { id: "public" },
       }),
     ]);
     if (baseContexts.some((c) => !c)) {
       throw new Error(
-        "Root and public contexts must be created before executing DML"
+        "Root and public contexts must be created before executing DML",
       );
     }
     this.contextsMap.set("root", {
       contextRecord: baseContexts[0]!,
-      executionContext: createSymbolsContext(this.prisma, "root", null),
+      executionContext: createSymbolsContext(this._prismaProvider, "root", null),
     });
     this.contextsMap.set("public", {
       contextRecord: baseContexts[1]!,
       executionContext: createSymbolsContext(
-        this.prisma,
+        this._prismaProvider,
         "public",
-        this.contextsMap.get("root")!.executionContext
+        this.contextsMap.get("root")!.executionContext,
       ),
     });
     this.currentContextId = "public";
     this.initialised = true;
   }
+
+
 
   public get contextId() {
     return this.currentContextId;
@@ -199,19 +201,25 @@ class ContextManager implements ExecutionContextManager {
     return this.currentContext.parentContext;
   }
 
-  public get prisma() {
-    return this._prisma;
+  public prisma() {
+    return this._prismaProvider.prisma();
   }
 
   async assignSymbol(id, recordType, recordId) {
     return this.currentContext.assignSymbol(id, recordType, recordId);
   }
 
-  async resolveSymbol<K extends keyof AssignableModels>(id: string, expectedTypes: K[] = []) {
+  async resolveSymbol<K extends keyof AssignableModels>(
+    id: string,
+    expectedTypes: K[] = [],
+  ) {
     return this.currentContext.resolveSymbol(id, expectedTypes);
   }
 
-  async localResolveSymbol<K extends keyof AssignableModels>(id: string, expectedTypes: K[] = []) {
+  async localResolveSymbol<K extends keyof AssignableModels>(
+    id: string,
+    expectedTypes: K[] = [],
+  ) {
     return this.currentContext.localResolveSymbol(id, expectedTypes);
   }
 
@@ -229,7 +237,7 @@ class ContextManager implements ExecutionContextManager {
   public async createCucinalistContext(
     id: string,
     parentId: string,
-    switchToContext = false
+    switchToContext = false,
   ) {
     if (!this.initialised) {
       throw new Error("Context manager not initialised");
@@ -238,18 +246,24 @@ class ContextManager implements ExecutionContextManager {
     if (!parentContext) {
       throw new Error(`Parent context ${parentId} not found`);
     }
-    const newContext = await this.prisma.context.findUnique({
+    const existingContext = await this.prisma().context.findUnique({
       where: { id },
     });
-    if (newContext) {
+    if (existingContext) {
       throw new Error(`Context ${id} already exists`);
     }
+    const newContext = await this.prisma().context.create({
+      data: {
+        id,
+        parentContextId: parentId,
+      },
+    });
     this.contextsMap.set(id, {
       contextRecord: newContext,
       executionContext: createSymbolsContext(
-        this.prisma,
+        this._prismaProvider,
         id,
-        parentContext.executionContext
+        parentContext.executionContext,
       ),
     });
     if (switchToContext) {
@@ -262,34 +276,39 @@ class ContextManager implements ExecutionContextManager {
     if (!this.initialised) {
       throw new Error("Context manager not initialised");
     }
-    const context = this.contextsMap.get(id);
+    const context = await this.getAndPopulateAncestors(id);
     if (!context) {
       throw new Error(`Context ${id} not found`);
     }
     this.currentContextId = id;
-    return this.currentContext as ExecutionContext;
+    return this.currentContext;
   }
 
   private async getAndPopulateAncestors(id: string, i = 0) {
     if (i > 1000) {
       throw new Error("Too many ancestors");
     }
-    const context = await this.prisma.context.findUnique({
+    const ctx = this.contextsMap.get(id);
+    if (ctx) {
+      return ctx;
+    }
+    const context = await this.prisma().context.findUnique({
       where: { id },
     });
     if (!context) {
       throw new Error(`Context ${id} not found`);
     }
-    const parentContext = await this.getAndPopulateAncestors(
-      context.parentContextId,
-      i + 1
-    );
+    const parentContext = !context.parentContextId
+      ? null
+      : this.contextsMap.has(context.parentContextId)
+        ? this.contextsMap.get(context.parentContextId)!
+        : await this.getAndPopulateAncestors(context.parentContextId!, i + 1);
     this.contextsMap.set(id, {
       contextRecord: context,
       executionContext: createSymbolsContext(
-        this.prisma,
+        this._prismaProvider,
         id,
-        parentContext.executionContext
+        parentContext ? parentContext.executionContext : null,
       ),
     });
     return this.contextsMap.get(id)!;

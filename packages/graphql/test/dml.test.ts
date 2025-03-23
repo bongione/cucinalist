@@ -1,11 +1,25 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { resetTestDB } from "../src/__generated__/prismaClient/sql";
-import { executeDML } from "../src/data/cuninalistDMLInterpreter";
+import { getCucinalistDMLInterpreter } from "../src/data/cuninalistDMLInterpreter";
 import { prisma } from "../src/data/dao/extendedPrisma";
-import {StoreBoughtIngredient} from '../src/__generated__/prismaClient'
+import { StoreBoughtIngredient } from "../src/__generated__/prismaClient";
 
 beforeAll(async () => {
-  await prisma.$queryRawTyped(resetTestDB());
+  await prisma.stepPreconditionInputIngredient.deleteMany({});
+  await prisma.stepPrecondition.deleteMany({});
+  await prisma.stepInputIngredient.deleteMany({});
+  await prisma.stepOutputIngredient.deleteMany({});
+  await prisma.unitOfMeasureAcceptedLabel.deleteMany({});
+  await prisma.recipeIngredient.deleteMany({});
+  await prisma.cookingStep.deleteMany({});
+  await prisma.recipe.deleteMany({});
+  await prisma.storeBoughtIngredientSynonym.deleteMany({});
+  await prisma.storeBoughtIngredient.deleteMany({});
+  await prisma.cookingTechnique.deleteMany({});
+  await prisma.namedEntity.deleteMany({});
+  await prisma.context.deleteMany({
+    where: { AND: [{ id: { not: "root" } }, { id: { not: "public" } }] },
+  });
 });
 
 describe("Initial db state", () => {
@@ -27,14 +41,72 @@ describe("Initial db state", () => {
   });
 });
 
+describe("Context dsl", () => {
+  it("Create a new context", async () => {
+    const interpreter = await getCucinalistDMLInterpreter();
+    const dsl = `create context testContext`;
+    await interpreter.executeDML(dsl);
+    const context = await prisma.context.findUnique({
+      where: { id: "testContext" },
+    });
+    expect(context).toBeDefined();
+    expect(context.id).toBe("testContext");
+    expect(context.parentContextId).toBe("public");
+    expect(interpreter.executionContext.currentContext.contextId).toBe(
+      "public",
+    );
+  });
+
+  it("Create a new context with parent", async () => {
+    const interpreter = await getCucinalistDMLInterpreter();
+    const dsl = `create context testContext2 parent root`;
+    await interpreter.executeDML(dsl);
+    const context = await prisma.context.findUnique({
+      where: { id: "testContext2" },
+    });
+    expect(context).toBeDefined();
+    expect(context.id).toBe("testContext2");
+    expect(context.parentContextId).toBe("root");
+    expect(interpreter.executionContext.currentContext.contextId).toBe(
+      "public",
+    );
+  });
+
+  it("Create a new context with parent and switch", async () => {
+    const interpreter = await getCucinalistDMLInterpreter();
+    const dsl = `create context and switch testContext3 parent public`;
+    await interpreter.executeDML(dsl);
+    const context = await prisma.context.findUnique({
+      where: { id: "testContext3" },
+    });
+    expect(context).toBeDefined();
+    expect(context.id).toBe("testContext3");
+    expect(context.parentContextId).toBe("public");
+    expect(interpreter.executionContext.currentContext.contextId).toBe(
+      "testContext3",
+    );
+  });
+
+  it("Switch to an existing context", async () => {
+    const interpreter = await getCucinalistDMLInterpreter();
+    const dsl = `create context testSwitchToContext
+    context testSwitchToContext`;
+    await interpreter.executeDML(dsl);
+    expect(interpreter.executionContext.currentContext.contextId).toBe(
+      "testSwitchToContext",
+    );
+  });
+});
+
 describe("Unit of mesaure dsl", () => {
   it("Define a unit of measure", async () => {
+    const interpreter = await getCucinalistDMLInterpreter();
     const dsl = `unitOfMeasure gram {
     measuring weight
     defaultSymbol g
     aka gram, grams
 }`;
-    await executeDML(prisma, dsl);
+    await interpreter.executeDML(dsl);
     const namedEntity = await prisma.namedEntity.findUnique({
       where: { contextId_id: { contextId: "public", id: "gram" } },
     });
@@ -65,7 +137,8 @@ describe("Unit of mesaure dsl", () => {
     defaultSymbol g
     aka gram, grams
 }`;
-    await executeDML(prisma, dsl);
+    const interpreter = await getCucinalistDMLInterpreter();
+    await interpreter.executeDML(dsl);
     const namedEntity = await prisma.namedEntity.findUnique({
       where: { contextId_id: { contextId: "public", id: "gram" } },
     });
@@ -75,7 +148,7 @@ describe("Unit of mesaure dsl", () => {
     plural g
     aka gram, grams, grammo, grammi
 }`;
-    await executeDML(prisma, dsl2);
+    await interpreter.executeDML(dsl2);
     const namedEntity2 = await prisma.namedEntity.findUnique({
       where: { contextId_id: { contextId: "public", id: "gram" } },
     });
@@ -108,10 +181,11 @@ describe("Unit of mesaure dsl", () => {
   });
 });
 
-describe('Ingredient dsl', () => {
-  it('Define a simple ingredient', async () => {
+describe("Ingredient dsl", () => {
+  it("Define a simple ingredient", async () => {
     const dsl = `ingredient butter measuredAs weight`;
-    await executeDML(prisma, dsl);
+    const interpreter = await getCucinalistDMLInterpreter();
+    await interpreter.executeDML(dsl);
     const namedEntity = await prisma.namedEntity.findUnique({
       where: { contextId_id: { contextId: "public", id: "butter" } },
     });
@@ -123,22 +197,23 @@ describe('Ingredient dsl', () => {
     const ingredient = await prisma.storeBoughtIngredient.findUnique({
       where: { id: namedEntity.recordId },
     });
-    const expectedIngredient: Partial<StoreBoughtIngredient>  = {
+    const expectedIngredient: Partial<StoreBoughtIngredient> = {
       gblId: "butter",
       name: "butter",
       measuredAs: "weight",
-    }
+    };
     expect(ingredient).toMatchObject(expectedIngredient);
   });
 
-  it('Define a complete ingredient', async () => {
+  it("Define a complete ingredient", async () => {
     const dsl = `ingredient butter
       fullname 'butter stick'
       plural 'butter sticks'
       aka 'block of butter', 'fat of milk'
       measuredAs weight
       `;
-    await executeDML(prisma, dsl);
+    const interpreter = await getCucinalistDMLInterpreter();
+    await interpreter.executeDML(dsl);
     const namedEntity = await prisma.namedEntity.findUnique({
       where: { contextId_id: { contextId: "public", id: "butter" } },
     });
@@ -148,16 +223,18 @@ describe('Ingredient dsl', () => {
     expect(namedEntity.contextId).toBe("public");
     expect(namedEntity.recordType).toBe("StoreBoughtIngredient");
     const ingredient = await prisma.storeBoughtIngredient.findUnique({
-      include: {'aka': true},
+      include: { aka: true },
       where: { id: namedEntity.recordId },
     });
-    const expectedIngredient: Partial<StoreBoughtIngredient & {aka: Array<{synonym: string}>}> = {
+    const expectedIngredient: Partial<
+      StoreBoughtIngredient & { aka: Array<{ synonym: string }> }
+    > = {
       gblId: "butter",
       name: "butter stick",
       measuredAs: "weight",
       plural: "butter sticks",
-      aka: [{synonym: 'block of butter'}, {synonym: 'fat of milk'}],
-    }
+      aka: [{ synonym: "block of butter" }, { synonym: "fat of milk" }],
+    };
     expect(ingredient).toMatchObject(expectedIngredient);
-  })
+  });
 });
