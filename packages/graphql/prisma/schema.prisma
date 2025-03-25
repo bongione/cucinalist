@@ -70,11 +70,12 @@ model RecipeIngredient {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  recipe                Recipe                 @relation(fields: [recipeId], references: [id], name: "ingredients")
-  storeBoughtIngredient StoreBoughtIngredient? @relation(fields: [storeBoughtIngredientId], references: [id])
-  producedByRecipe      Recipe?                @relation(fields: [producedByRecipeId], references: [id], name: "producedByRecipe")
-  unitOfMeasure         UnitOfMeasure          @relation(fields: [unitOfMeasureId], references: [id])
+  recipe                Recipe                       @relation(fields: [recipeId], references: [id], name: "ingredients")
+  storeBoughtIngredient StoreBoughtIngredient?       @relation(fields: [storeBoughtIngredientId], references: [id])
+  producedByRecipe      Recipe?                      @relation(fields: [producedByRecipeId], references: [id], name: "producedByRecipe")
+  unitOfMeasure         UnitOfMeasure                @relation(fields: [unitOfMeasureId], references: [id])
   usedAsInput           StepInputIngredient[]
+  stepPreconditionOf    StepPreconditionIngredient[]
 }
 
 model CookingStep {
@@ -168,45 +169,43 @@ model StoreBoughtIngredientSynonym {
 }
 
 model StepInputIngredient {
-  id                              String                            @id @default(cuid())
-  cookingStepId                   String
-  nthInput                        Int
-  prefix                          String?
-  portionOf                       Float?
-  outputIngredientId              String?
-  recipeIngredientId              String?
-  cookingStep                     CookingStep                       @relation(fields: [cookingStepId], references: [id])
-  outputIngredient                StepOutputIngredient?             @relation(fields: [outputIngredientId], references: [id])
-  recipeIngredient                RecipeIngredient?                 @relation(fields: [recipeIngredientId], references: [id])
-  StepPrecondition                StepPrecondition?                 @relation(fields: [stepPreconditionId], references: [id])
-  stepPreconditionId              String?
-  StepPreconditionInputIngredient StepPreconditionInputIngredient[]
+  id                 String                @id @default(cuid())
+  cookingStepId      String
+  nthInput           Int
+  prefix             String?
+  portionOf          Float?
+  outputIngredientId String?
+  recipeIngredientId String?
+  cookingStep        CookingStep           @relation(fields: [cookingStepId], references: [id])
+  outputIngredient   StepOutputIngredient? @relation(fields: [outputIngredientId], references: [id])
+  recipeIngredient   RecipeIngredient?     @relation(fields: [recipeIngredientId], references: [id])
 }
 
 model StepOutputIngredient {
-  id            String                @id @default(cuid())
-  cookingStepId String
-  nthOutput     Int
-  name          String
-  usedAsInput   StepInputIngredient[]
-  cookingStep   CookingStep           @relation(fields: [cookingStepId], references: [id])
+  id                           String                       @id @default(cuid())
+  cookingStepId                String
+  nthOutput                    Int
+  name                         String
+  usedAsInput                  StepInputIngredient[]
+  cookingStep                  CookingStep                  @relation(fields: [cookingStepId], references: [id])
+  stepPreconditionIngredientOf StepPreconditionIngredient[]
 }
 
 model StepPrecondition {
-  id                              String                            @id @default(cuid())
-  cookingStepId                   String
-  nthPrecondition                 Int
-  description                     String
-  cookingStep                     CookingStep                       @relation(fields: [cookingStepId], references: [id])
-  inputIngredients                StepInputIngredient[]
-  StepPreconditionInputIngredient StepPreconditionInputIngredient[]
+  id               String                       @id @default(cuid())
+  cookingStepId    String
+  nthPrecondition  Int
+  description      String
+  cookingStep      CookingStep                  @relation(fields: [cookingStepId], references: [id])
+  inputIngredients StepPreconditionIngredient[]
 }
 
-model StepPreconditionInputIngredient {
-  stepPreconditionId    String
-  stepInputIngredientId String
-  stepPrecondition      StepPrecondition    @relation(fields: [stepPreconditionId], references: [id])
-  inputIngredient       StepInputIngredient @relation(fields: [stepInputIngredientId], references: [id])
-
-  @@id([stepPreconditionId, stepInputIngredientId])
+model StepPreconditionIngredient {
+  id                 String                @id @default(cuid())
+  stepPreconditionId String
+  recipeIngredientId String?
+  outputIngredientId String?
+  stepPrecondition   StepPrecondition      @relation(fields: [stepPreconditionId], references: [id])
+  outputIngredient   StepOutputIngredient? @relation(fields: [outputIngredientId], references: [id])
+  recipeIngredient   RecipeIngredient?     @relation(fields: [recipeIngredientId], references: [id])
 }

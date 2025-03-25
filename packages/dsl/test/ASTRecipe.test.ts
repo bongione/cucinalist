@@ -155,7 +155,7 @@ describe("Simple recipes", () => {
             amount: {
               value: 2,
               unit: "spoons",
-            }
+            },
           },
         ],
         cookingSteps: [
@@ -207,7 +207,7 @@ describe("Simple recipes", () => {
                 },
               },
             ],
-            activeMinutes: 0,
+            activeMinutes: 1,
             keepAnEyeMinutes: 0,
             inactiveMinutes: 0,
             produces: [
@@ -267,7 +267,7 @@ describe("Simple recipes", () => {
             ],
             activeMinutes: 0,
             keepAnEyeMinutes: 0,
-            inactiveMinutes: 0,
+            inactiveMinutes: 1,
             medium: {
               type: "RecipeIngredient",
               ingredientId: "extra virge olive oil",
@@ -317,7 +317,7 @@ describe("Simple recipes", () => {
               outputId: "boiledSaltedWater",
             },
             activeMinutes: 0,
-            keepAnEyeMinutes: 0,
+            keepAnEyeMinutes: 1,
             inactiveMinutes: 0,
             produces: [
               {
@@ -441,9 +441,9 @@ describe("Simple recipes", () => {
             inactiveMinutes: 0,
             produces: [
               {
-                type: 'CookingStepOutput',
-                outputId: "step_output_10",
-              }
+                type: "CookingStepOutput",
+                outputId: "step_9_output",
+              },
             ],
           },
           {
@@ -470,6 +470,18 @@ describe("Simple recipes", () => {
         ],
       },
     ];
-    expect(parseCucinalistDsl(dsl)).toMatchObject(expectedAst);
+    const ast = parseCucinalistDsl(dsl);
+    expect(ast.length).toBe(1);
+    const recipeAst = ast[0] as Recipe;
+    expect(ast).toMatchObject(expectedAst);
+    expect(recipeAst.ingredients[4]).toBe(
+      recipeAst.cookingSteps[0].ingredients[0],
+    );
+    expect(recipeAst.ingredients[5]).toBe(
+      recipeAst.cookingSteps[0].ingredients[1],
+    );
+    expect(recipeAst.cookingSteps[0].produces[0]).toBe(
+      recipeAst.cookingSteps[4].preconditions[0].ingredientsNeeded[0],
+    );
   });
 });

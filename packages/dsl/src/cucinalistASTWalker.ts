@@ -252,10 +252,13 @@ export class CucinalistASTWalker extends CucinalistListener {
       if (step.produces.length === 0) {
         const stepCtx = ctx.parentCtx.parentCtx;
         const stepLineCtx = ctx.parentCtx;
+        // The first context in the grandparent is the token 'steps'
+        // We are happy for the number to stay as it is, not zero-indexed,
+        // easier for a non-programmer to understand
         const stepIndex = stepCtx.children.indexOf(stepLineCtx);
         step.produces.push({
           type: 'CookingStepOutput',
-          outputId: `step_output_${stepIndex+1}`,
+          outputId: `step_${stepIndex}_output`,
         })
       }
     }
@@ -267,7 +270,7 @@ export class CucinalistASTWalker extends CucinalistListener {
     const transitionData: TransitionData = {
       activeMinutes: ctx._activeMinutes.text && ctx._activeMinutes.start >= 0
         ? parseInt(ctx._activeMinutes.text)
-        : 0,
+        : 1,
       inactiveMinutes: 0,
       keepAnEyeMinutes: 0,
     };
@@ -279,7 +282,7 @@ export class CucinalistASTWalker extends CucinalistListener {
       activeMinutes: 0,
       inactiveMinutes: ctx._parallellMinutes && ctx._parallellMinutes.start >= 0
         ? parseInt(ctx._parallellMinutes.text)
-        : 0,
+        : 1,
       keepAnEyeMinutes: 0,
     };
     this._ctxValues.set(ctx, transitionData);
@@ -300,7 +303,7 @@ export class CucinalistASTWalker extends CucinalistListener {
       inactiveMinutes: 0,
       keepAnEyeMinutes: ctx._keepEyelMinutes && ctx._keepEyelMinutes.start >= 0
         ? parseInt(ctx._keepEyelMinutes.text)
-        : 0,
+        : 1,
     };
     this._ctxValues.set(ctx, transitionData);
   };
