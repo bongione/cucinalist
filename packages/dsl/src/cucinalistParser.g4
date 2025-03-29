@@ -55,6 +55,6 @@ string: unquotedString | quotedString;
 unquotedString: SINGLE_ID;
 quotedString: STRING;
 
-meal: MEAL mealId=id (FULLNAME fullname=quotedString)? DINERS nDiners=number (RECIPES recipeLine+|course+);
-course: COURSE courseName=id recipeLine+;
+meal: MEAL (mealId=id (FULLNAME fullname=quotedString)?)? DINERS nDiners=number ((RECIPES recipeLine+)|course+);
+course: COURSE (courseName=id)? recipeLine+;
 recipeLine: DASH recipeId=id SM;

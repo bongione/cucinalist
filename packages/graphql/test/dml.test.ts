@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import { getCucinalistDMLInterpreter } from "../src/data/cuninalistDMLInterpreter";
 import { prisma } from "../src/data/dao/extendedPrisma";
 import {
@@ -6,9 +6,15 @@ import {
   Recipe,
   RecipeIngredient,
   CookingStep,
+  Meal,
+  MealCourse,
+  CourseRecipe,
 } from "../src/__generated__/prismaClient";
 
-beforeAll(async () => {
+async function cleanupDb() {
+  await prisma.courseRecipe.deleteMany({});
+  await prisma.mealCourse.deleteMany({});
+  await prisma.meal.deleteMany({});
   await prisma.stepPreconditionIngredient.deleteMany({});
   await prisma.stepPrecondition.deleteMany({});
   await prisma.stepInputIngredient.deleteMany({});
@@ -24,7 +30,11 @@ beforeAll(async () => {
   await prisma.context.deleteMany({
     where: { AND: [{ id: { not: "root" } }, { id: { not: "public" } }] },
   });
-});
+}
+
+beforeEach(cleanupDb);
+
+afterAll(cleanupDb);
 
 describe("Initial db state", () => {
   it("should have a root context", async () => {
@@ -293,10 +303,16 @@ describe("Recipe dsl", () => {
           include: {
             unitOfMeasure: true,
           },
+          orderBy: {
+            sequence: "asc",
+          },
         },
         steps: {
           include: {
             cookingTechnique: true,
+          },
+          orderBy: {
+            sequence: "asc",
           },
         },
       },
@@ -462,7 +478,7 @@ describe("Recipe dsl", () => {
           parallelMinutes: 0,
           keepEyeMinutes: 0,
           cookingTechnique: { gblId: "mix" },
-          outputIngredients: [{name: 'step_9_output'}]
+          outputIngredients: [{ name: "step_9_output" }],
         },
         {
           // - serve pastaWithCondiment -> SpaghettiAglioOlioEPeperoncino;
@@ -496,11 +512,17 @@ describe("Recipe dsl", () => {
             storeBoughtIngredient: true,
             unitOfMeasure: true,
           },
+          orderBy: {
+            sequence: "asc",
+          },
         },
         steps: {
           include: {
             cookingTechnique: true,
             outputIngredients: true,
+          },
+          orderBy: {
+            sequence: "asc",
           },
         },
       },
@@ -530,10 +552,238 @@ describe("Recipe dsl", () => {
       expect(recordInfo, `At record ${i}`).toMatchObject(expectedRecipeStep);
       expect(cookingTechnique.gblId).toBe(expectedCookingTechnique.gblId);
       for (let j = 0; j < outputIngredients.length; j++) {
-        expect(outputIngredients[j].name, `At output ingredient with index ${j}`).toBe(
-          expectedOutputIngredients[j].name,
-        );
+        expect(
+          outputIngredients[j].name,
+          `At output ingredient with index ${j}`,
+        ).toBe(expectedOutputIngredients[j].name);
       }
     }
+  });
+});
+
+describe("Single course meals", () => {
+  it("Single recipe meal", async () => {
+    const dsl = `recipe breadSlice
+      serves 1
+      ingredients
+        - 1 slice bread;
+      steps
+        - serve bread;
+        
+      meal
+        diners 1
+        recipes
+          - breadSlice;
+    `;
+    const expectedMealRecipe: Partial<
+      CourseRecipe & { recipe: { gblId: string } }
+    > = {
+      recipe: { gblId: "breadSlice" },
+      sequence: 1,
+    };
+    const expectedMeal: Partial<
+      Meal & { courses: Array<Partial<MealCourse>> }
+    > = {
+      nDiners: 1,
+      gblId: null,
+      courses: [
+        {
+          sequence: 1,
+          name: null,
+        },
+      ],
+    };
+    const interpreter = await getCucinalistDMLInterpreter();
+    const changes = await interpreter.executeDML(dsl);
+    expect(changes.length).toBe(2);
+    const meal = await prisma.meal.findFirst({
+      where: { id: changes[1].id },
+      include: {
+        courses: {
+          orderBy: {
+            sequence: "asc",
+          },
+        },
+      },
+    });
+    expect(meal).toBeDefined();
+    expect(meal).not.toBeNull();
+    expect(meal).toMatchObject(expectedMeal);
+    const mealCourseId = meal.courses[0].id;
+    const courseRecipes = await prisma.courseRecipe.findMany({
+      where: { courseId: mealCourseId },
+      include: {
+        recipe: true,
+      },
+    });
+    expect(courseRecipes).toHaveLength(1);
+    expect(courseRecipes[0]).toMatchObject(expectedMealRecipe);
+  });
+
+  it("Two recipes meal with fullName and id", async () => {
+    const dsl = `recipe breadSlice
+      serves 1
+      ingredients
+        - 1 slice bread;
+      steps
+        - serve bread;
+        
+      recipe rawEgg
+      serves 1
+      ingredients
+        - 1 egg;
+      steps
+        - break egg -> brokenEgg;
+        - serve brokenEgg -> rawEgg;
+      
+      meal tonight fullName 'Scanvenge the fridge'
+        diners 1
+        recipes
+          - breadSlice;
+          - rawEgg;
+    `;
+    const expectedMealRecipes: Array<
+      Partial<CourseRecipe & { recipe: { gblId: string } }>
+    > = [
+      {
+        recipe: { gblId: "breadSlice" },
+        sequence: 1,
+      },
+      {
+        recipe: { gblId: "rawEgg" },
+        sequence: 2,
+      },
+    ];
+    const expectedMeal: Partial<
+      Meal & { courses: Array<Partial<MealCourse>> }
+    > = {
+      nDiners: 1,
+      gblId: "tonight",
+      fullName: "Scanvenge the fridge",
+      courses: [
+        {
+          sequence: 1,
+          name: null,
+        },
+      ],
+    };
+    const interpreter = await getCucinalistDMLInterpreter();
+    const changes = await interpreter.executeDML(dsl);
+    expect(changes.length).toBe(3);
+    const meal = await prisma.meal.findFirst({
+      where: { id: changes[2].id },
+      include: {
+        courses: {
+          orderBy: {
+            sequence: "asc",
+          },
+        },
+      },
+    });
+    expect(meal).toBeDefined();
+    expect(meal).not.toBeNull();
+    expect(meal).toMatchObject(expectedMeal);
+    const mealCourseId = meal.courses[0].id;
+    const courseRecipes = await prisma.courseRecipe.findMany({
+      where: { courseId: mealCourseId },
+      include: {
+        recipe: true,
+      },
+    });
+    expect(courseRecipes).toHaveLength(2);
+    expect(courseRecipes).toMatchObject(expectedMealRecipes);
+  });
+
+  it("Two courses meal with id", async () => {
+    const dsl = `recipe breadSlice
+      serves 1
+      ingredients
+        - 1 slice bread;
+      steps
+        - serve bread;
+        
+      recipe rawEgg
+      serves 1
+      ingredients
+        - 1 egg;
+      steps
+        - break egg -> brokenEgg;
+        - serve brokenEgg -> rawEgg;
+      
+      meal tonight
+        diners 2
+        course
+          - breadSlice;
+        course
+          - rawEgg;
+    `;
+    const expectedMealRecipes: Array<
+      Array<Partial<CourseRecipe & { recipe: { gblId: string } }>>
+    > = [
+      [
+        {
+          recipe: { gblId: "breadSlice" },
+          sequence: 1,
+        },
+      ],
+      [
+        {
+          recipe: { gblId: "rawEgg" },
+          sequence: 1,
+        },
+      ],
+    ];
+    const expectedMeal: Partial<
+      Meal & { courses: Array<Partial<MealCourse>> }
+    > = {
+      nDiners: 2,
+      gblId: "tonight",
+      fullName: "tonight",
+      courses: [
+        {
+          sequence: 1,
+          name: null,
+        },
+        {
+          sequence: 2,
+          name: null,
+        },
+      ],
+    };
+    const interpreter = await getCucinalistDMLInterpreter();
+    const changes = await interpreter.executeDML(dsl);
+    expect(changes.length).toBe(3);
+    const meal = await prisma.meal.findFirst({
+      where: { id: changes[2].id },
+      include: {
+        courses: {
+          orderBy: {
+            sequence: "asc",
+          },
+        },
+      },
+    });
+    expect(meal).toBeDefined();
+    expect(meal).not.toBeNull();
+    expect(meal).toMatchObject(expectedMeal);
+    const firstMealCourseId = meal.courses[0].id;
+    const firstCourseRecipes = await prisma.courseRecipe.findMany({
+      where: { courseId: firstMealCourseId },
+      include: {
+        recipe: true,
+      },
+    });
+    expect(firstCourseRecipes).toHaveLength(1);
+    expect(firstCourseRecipes).toMatchObject(expectedMealRecipes[0]);
+
+    const secondMealCourseId = meal.courses[1].id;
+    const secondCourseRecipes = await prisma.courseRecipe.findMany({
+      where: { courseId: secondMealCourseId },
+      include: {
+        recipe: true,
+      },
+    });
+    expect(secondCourseRecipes).toHaveLength(1);
+    expect(secondCourseRecipes).toMatchObject(expectedMealRecipes[1]);
   });
 });

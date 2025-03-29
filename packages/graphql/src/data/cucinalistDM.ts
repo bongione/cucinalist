@@ -1,11 +1,11 @@
-import { BoughtIngredient, Recipe, UnitOfMeasure } from "@cucinalist/dsl";
+import dsl, { BoughtIngredient, Recipe, UnitOfMeasure } from "@cucinalist/dsl";
 import { CucinalistModels, ExecutionContext } from "./dmlTypes";
 import {
-  CookingStep,
+  CookingStep, MealCourse,
   MeasuringFeature,
   Recipe as RecipeRecord,
-  RecipeIngredient,
-} from "../__generated__/prismaClient";
+  RecipeIngredient
+} from '../__generated__/prismaClient'
 
 interface RecipeExecutionContext extends ExecutionContext {
   readonly localResolutions: Map<
@@ -185,7 +185,7 @@ async function processRecipeIngredients(
             : undefined,
         amount: ri.amount.value,
         unitOfMeasureId: unitOfMeasure.id,
-        nth: i + 1,
+        sequence: i + 1,
       },
     });
     executionContext.localResolutions.set(ri, {
@@ -216,6 +216,7 @@ async function processRecipeSteps(
         keepEyeMinutes: step.keepAnEyeMinutes,
         parallelMinutes: step.inactiveMinutes,
         techniqueId: techniqueRecord.id,
+        sequence: i + 1,
       },
     });
 
@@ -231,7 +232,7 @@ async function processRecipeSteps(
         await executionContext.prisma().stepInputIngredient.create({
           data: {
             cookingStepId: stepRecord.id,
-            nthInput: j,
+            sequence: j,
             recipeIngredientId: outputOrIng.id,
           },
         });
@@ -239,7 +240,7 @@ async function processRecipeSteps(
         await executionContext.prisma().stepInputIngredient.create({
           data: {
             cookingStepId: stepRecord.id,
-            nthInput: j,
+            sequence: j,
             outputIngredientId: outputOrIng.id,
           },
         });
@@ -255,7 +256,7 @@ async function processRecipeSteps(
         .stepOutputIngredient.create({
           data: {
             cookingStepId: stepRecord.id,
-            nthOutput: j,
+            sequence: j,
             name: outputIngredient.outputId,
           },
         });
@@ -273,7 +274,7 @@ async function processRecipeSteps(
         .stepPrecondition.create({
           data: {
             cookingStepId: stepRecord.id,
-            nthPrecondition: j + 1,
+            sequence: j + 1,
             description: precondition.conditionDescription || "",
           },
         });
@@ -289,6 +290,7 @@ async function processRecipeSteps(
             data: {
               stepPreconditionId: preconditionRecord.id,
               recipeIngredientId: ingredientRecord.id,
+              sequence: k + 1,
             },
           });
         } else if (ingredientRecord.type === "StepOutputIngredient") {
@@ -296,6 +298,7 @@ async function processRecipeSteps(
             data: {
               stepPreconditionId: preconditionRecord.id,
               outputIngredientId: ingredientRecord.id,
+              sequence: k + 1,
             },
           });
         } else {
@@ -422,4 +425,77 @@ export async function processBoughtIngredientStatement(
     });
   }
   return upsertedRecord;
+}
+
+export async function processCreateMealStatement(
+  meal: dsl.SingleCourseMeal | dsl.MultiCourseMeal,
+  executionContext: ExecutionContext,
+) {
+  let existingMeal: null | CucinalistModels["Meal"] = null;
+  if (meal.id) {
+    existingMeal = await executionContext.localResolveSymbol(meal.id, ["Meal"]);
+    if (existingMeal !== null && existingMeal.type !== "Meal") {
+      throw new Error(`Symbol ${meal.id} already exists and is not a Meal`);
+    }
+  }
+  const p =
+    existingMeal === null
+      ? executionContext.prisma().meal.create({
+          data: {
+            gblId: meal.id,
+            fullName: meal.name,
+            description: meal.name,
+            nDiners: meal.diners
+          },
+        })
+      : executionContext.prisma().meal.update({
+          where: { id: existingMeal.id },
+          data: {
+            gblId: meal.id || null,
+            fullName: meal.name || null,
+            description: meal.name || null,
+            nDiners: meal.diners,
+            courses: {
+              deleteMany: {},
+            },
+          },
+        });
+  const mealRecord = await p;
+  if (mealRecord.gblId) {
+    await executionContext.assignSymbol(mealRecord.gblId, mealRecord.type, mealRecord.id);
+  }
+  const courses: dsl.MealCourse[] = meal.type === "SingleCourseMeal" ? [{
+    type: 'MealCourse',
+    recipesIds: meal.recipesIds,
+    name: undefined,
+  }] : meal.courses;
+
+  for ( let i = 0; i < courses.length; i++) {
+      const course = courses[i];
+      const courseRecord = await executionContext.prisma().mealCourse.create({
+        data: {
+          mealId: mealRecord.id,
+          name: course.name,
+          sequence: i + 1
+        },
+      });
+      for (let j = 0; j < course.recipesIds.length; j++) {
+        const recipeId = course.recipesIds[j];
+        const recipe = await executionContext.localResolveSymbol(recipeId, ["Recipe"]);
+        if (recipe === null) {
+          throw new Error(`Recipe ${recipeId} not found`);
+        }
+        if (recipe.type !== "Recipe") {
+          throw new TypeError(`The id ${recipeId} is not a Recipe`);
+        }
+        await executionContext.prisma().courseRecipe.create({
+          data: {
+            courseId: courseRecord.id,
+            recipeId: recipe.id,
+            sequence: j + 1
+          },
+        });
+    }
+  }
+  return mealRecord;
 }

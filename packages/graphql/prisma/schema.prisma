@@ -29,6 +29,7 @@ enum EntityType {
   StoreBoughtIngredient
   CookingTechnique
   UnitOfMeasure
+  Meal
 }
 
 model NamedEntity {
@@ -44,16 +45,18 @@ model NamedEntity {
 }
 
 model Recipe {
-  id            String             @id @default(cuid())
-  gblId         String
-  name          String
-  description   String?
-  serves        Int
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  id          String   @id @default(cuid())
+  gblId       String
+  name        String
+  description String?
+  serves      Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   ingredients   RecipeIngredient[] @relation("ingredients")
   steps         CookingStep[]
   usedInRecipes RecipeIngredient[] @relation("producedByRecipe")
+  inCourses     CourseRecipe[]
 
   @@index([gblId], name: "ixRecipeGblId")
 }
@@ -61,11 +64,11 @@ model Recipe {
 model RecipeIngredient {
   id                      String  @id @default(cuid())
   recipeId                String
+  sequence                Int
   storeBoughtIngredientId String?
   producedByRecipeId      String?
   amount                  Float
   unitOfMeasureId         String
-  nth                     Int
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -81,6 +84,7 @@ model RecipeIngredient {
 model CookingStep {
   id                String                 @id @default(cuid())
   recipeId          String
+  sequence          Int
   techniqueId       String
   activeMinutes     Int?
   parallelMinutes   Int?
@@ -171,7 +175,7 @@ model StoreBoughtIngredientSynonym {
 model StepInputIngredient {
   id                 String                @id @default(cuid())
   cookingStepId      String
-  nthInput           Int
+  sequence           Int
   prefix             String?
   portionOf          Float?
   outputIngredientId String?
@@ -184,7 +188,7 @@ model StepInputIngredient {
 model StepOutputIngredient {
   id                           String                       @id @default(cuid())
   cookingStepId                String
-  nthOutput                    Int
+  sequence                     Int
   name                         String
   usedAsInput                  StepInputIngredient[]
   cookingStep                  CookingStep                  @relation(fields: [cookingStepId], references: [id])
@@ -194,7 +198,7 @@ model StepOutputIngredient {
 model StepPrecondition {
   id               String                       @id @default(cuid())
   cookingStepId    String
-  nthPrecondition  Int
+  sequence         Int
   description      String
   cookingStep      CookingStep                  @relation(fields: [cookingStepId], references: [id])
   inputIngredients StepPreconditionIngredient[]
@@ -202,10 +206,49 @@ model StepPrecondition {
 
 model StepPreconditionIngredient {
   id                 String                @id @default(cuid())
+  sequence           Int
   stepPreconditionId String
   recipeIngredientId String?
   outputIngredientId String?
   stepPrecondition   StepPrecondition      @relation(fields: [stepPreconditionId], references: [id])
   outputIngredient   StepOutputIngredient? @relation(fields: [outputIngredientId], references: [id])
   recipeIngredient   RecipeIngredient?     @relation(fields: [recipeIngredientId], references: [id])
+}
+
+model Meal {
+  id          String   @id @default(cuid())
+  gblId       String?
+  fullName    String?
+  description String?
+  nDiners     Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courses MealCourse[]
+
+  @@index([gblId], name: "ixMealGblId")
+}
+
+model MealCourse {
+  id        String   @id @default(cuid())
+  mealId    String
+  sequence  Int
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  meal    Meal           @relation(fields: [mealId], references: [id])
+  recipes CourseRecipe[]
+}
+
+model CourseRecipe {
+  id        String   @id @default(cuid())
+  courseId  String
+  recipeId  String
+  sequence  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course MealCourse @relation(fields: [courseId], references: [id])
+  recipe Recipe     @relation(fields: [recipeId], references: [id])
 }

@@ -7,7 +7,7 @@ import {
 import { createAndInitExecutionContextManager } from "./executionContext";
 import {AssignableModels, CucinalistDMLInterpreter, ExecutionContextManager} from './dmlTypes'
 import {
-  processBoughtIngredientStatement,
+  processBoughtIngredientStatement, processCreateMealStatement,
   processCreateUnitOfMeasureStatement,
   processRecipeStatement
 } from './cucinalistDM'
@@ -49,7 +49,8 @@ export async function getCucinalistDMLInterpreter() {
             const ingredient = await processBoughtIngredientStatement(statement, executionContext);
             newOrUpdatedEntities.push(ingredient);
           } else if (statement.type === 'SingleCourseMeal' || statement.type === 'MultiCourseMeal') {
-            // Skip for now, no op, semantics to be decided
+            const meal = await processCreateMealStatement(statement, executionContext);
+            newOrUpdatedEntities.push(meal);
           } else {
             throw new Error(`Unknown statement type`);
           }

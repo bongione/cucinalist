@@ -39,16 +39,19 @@ export type CucinalistModels = {
   StepPrecondition: Awaited<
     ReturnType<Prisma["stepPrecondition"]["findUnique"]>
   >;
-  StepPreconditionInputIngredient: Awaited<
-    ReturnType<Prisma["stepPreconditionInputIngredient"]["findUnique"]>
+  StepPreconditionnIgredient: Awaited<
+    ReturnType<Prisma["stepPreconditionIngredient"]["findUnique"]>
   >;
+  Meal: Awaited<ReturnType<Prisma["meal"]["findUnique"]>>;
+  MealCourse: Awaited<ReturnType<Prisma["mealCourse"]["findUnique"]>>;
+  CourseRecipe: Awaited<ReturnType<Prisma["courseRecipe"]["findUnique"]>>;
 };
 
 type CucinalistModelName = keyof CucinalistModels;
 
 export type AssignableModels = Pick<
   CucinalistModels,
-  "Recipe" | "StoreBoughtIngredient" | "UnitOfMeasure" | "CookingTechnique"
+  "Recipe" | "StoreBoughtIngredient" | "UnitOfMeasure" | "CookingTechnique" | 'Meal'
 >;
 
 export interface UnresolvedId {
@@ -96,5 +99,5 @@ export interface ExecutionContextManager extends ExecutionContext {
 
 export interface CucinalistDMLInterpreter {
   readonly executionContext: ExecutionContextManager;
-  executeDML: (dslStatements: string) => Promise<CucinalistModels[keyof CucinalistModels][]>;
+  executeDML: (dslStatements: string) => Promise<Array<CucinalistModels[keyof CucinalistModels]>>;
 }

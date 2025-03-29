@@ -78,6 +78,21 @@ export const prisma = new OriginalPrismaClient().$extends({
         compute: () => "StepPreconditionType" as const,
       },
     },
+    meal: {
+      type: {
+        compute: () => "Meal" as const,
+      },
+    },
+    mealCourse: {
+      type: {
+        compute: () => "MealCourse" as const,
+      },
+    },
+    courseRecipe: {
+      type: {
+        compute: () => "CourseRecipe" as const,
+      },
+    },
   },
 });
 

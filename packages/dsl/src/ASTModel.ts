@@ -66,8 +66,8 @@ export interface Recipe {
 }
 
 interface BaseMeal {
-  id: string;
-  name: string;
+  id?: string;
+  name?: string;
   diners: number;
 }
 
@@ -78,7 +78,7 @@ export interface SingleCourseMeal extends BaseMeal {
 
 export interface MealCourse {
   type: "MealCourse";
-  name: string;
+  name?: string;
   recipesIds: string[];
 }
 
