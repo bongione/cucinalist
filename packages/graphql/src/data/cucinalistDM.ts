@@ -438,6 +438,20 @@ export async function processCreateMealStatement(
       throw new Error(`Symbol ${meal.id} already exists and is not a Meal`);
     }
   }
+  if (existingMeal !== null) {
+    await executionContext.prisma().courseRecipe.deleteMany({
+      where: {
+        course: {
+          mealId: existingMeal.id,
+        },
+      }
+    });
+    await executionContext.prisma().mealCourse.deleteMany({
+      where: {
+        mealId: existingMeal.id,
+      }
+    });
+  }
   const p =
     existingMeal === null
       ? executionContext.prisma().meal.create({

@@ -35,10 +35,10 @@ whenCondition: id string?;
 cookingStep: stepStart=DASH OPTIONAL? action=id sourceIngredients=idList
     (FROM sourceOfStep=id)? ((TO|ON) targetOfStep=id)? (IN mediumOfStep=id)?
     (transition outputs=idList)? SM;
-transition: activeDash=DASH activeMinutes=INT RA                                       # activeMinutesTransition
+transition: activeDash=DASH activeMinutes=INT? RA                                       # activeMinutesTransition
                 | RA                                                                   # singleMinuteTransition
-                | RA_PARALLEL_TIME_LEFT parallellMinutes=INT RA_PARALLEL_TIME_RIGHT    # parallellMinutesTransition
-                | RA_KEEPYE_TIME_LEFT keepEyelMinutes=INT RA_KEEPYE_TIME_RIGHT         # keepEyelMinutesTransition;
+                | RA_PARALLEL_TIME_LEFT parallellMinutes=INT? RA_PARALLEL_TIME_RIGHT    # parallellMinutesTransition
+                | RA_KEEPYE_TIME_LEFT keepEyelMinutes=INT? RA_KEEPYE_TIME_RIGHT         # keepEyelMinutesTransition;
 
 idList: id (COMMA id)* (AND id)?;
 

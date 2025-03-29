@@ -268,7 +268,7 @@ export class CucinalistASTWalker extends CucinalistListener {
 
   exitActiveMinutesTransition = (ctx: ActiveMinutesTransitionContext) => {
     const transitionData: TransitionData = {
-      activeMinutes: ctx._activeMinutes.text && ctx._activeMinutes.start >= 0
+      activeMinutes: ctx._activeMinutes && ctx._activeMinutes.text && ctx._activeMinutes.start >= 0
         ? parseInt(ctx._activeMinutes.text)
         : 1,
       inactiveMinutes: 0,

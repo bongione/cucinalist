@@ -1,14 +1,12 @@
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import { MeasuringFeature } from "../src/__generated__/prismaClient";
-import { resetTestDB } from "../src/__generated__/prismaClient/sql";
 import { createAndInitExecutionContextManager } from "../src/data/executionContext";
 import { AssignableModels } from "../src/data/dmlTypes";
 import { prisma } from "../src/data/dao/extendedPrisma";
 import { createPrismaProvider } from "../src/data/dao/PrismaProvider";
+import {cleanupDb} from './dbUtils'
 
-beforeAll(async () => {
-  await prisma.$queryRawTyped(resetTestDB());
-});
+beforeAll(cleanupDb);
 
 beforeEach(async () => {
   await prisma.namedEntity.deleteMany();

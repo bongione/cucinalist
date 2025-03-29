@@ -1,36 +1,16 @@
-import { describe, it, expect, beforeEach, afterAll } from "vitest";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { getCucinalistDMLInterpreter } from "../src/data/cuninalistDMLInterpreter";
 import { prisma } from "../src/data/dao/extendedPrisma";
 import {
-  StoreBoughtIngredient,
-  Recipe,
-  RecipeIngredient,
   CookingStep,
+  CourseRecipe,
   Meal,
   MealCourse,
-  CourseRecipe,
+  Recipe,
+  RecipeIngredient,
+  StoreBoughtIngredient,
 } from "../src/__generated__/prismaClient";
-
-async function cleanupDb() {
-  await prisma.courseRecipe.deleteMany({});
-  await prisma.mealCourse.deleteMany({});
-  await prisma.meal.deleteMany({});
-  await prisma.stepPreconditionIngredient.deleteMany({});
-  await prisma.stepPrecondition.deleteMany({});
-  await prisma.stepInputIngredient.deleteMany({});
-  await prisma.stepOutputIngredient.deleteMany({});
-  await prisma.unitOfMeasureAcceptedLabel.deleteMany({});
-  await prisma.recipeIngredient.deleteMany({});
-  await prisma.cookingStep.deleteMany({});
-  await prisma.recipe.deleteMany({});
-  await prisma.storeBoughtIngredientSynonym.deleteMany({});
-  await prisma.storeBoughtIngredient.deleteMany({});
-  await prisma.cookingTechnique.deleteMany({});
-  await prisma.namedEntity.deleteMany({});
-  await prisma.context.deleteMany({
-    where: { AND: [{ id: { not: "root" } }, { id: { not: "public" } }] },
-  });
-}
+import { cleanupDb } from "./dbUtils";
 
 beforeEach(cleanupDb);
 
@@ -115,11 +95,11 @@ describe("Context dsl", () => {
 describe("Unit of mesaure dsl", () => {
   it("Define a unit of measure", async () => {
     const interpreter = await getCucinalistDMLInterpreter();
-    const dsl = `unitOfMeasure gram {
+    const dsl = `unitOfMeasure gram 
     measuring weight
     defaultSymbol g
     aka gram, grams
-}`;
+`;
     await interpreter.executeDML(dsl);
     const namedEntity = await prisma.namedEntity.findUnique({
       where: { contextId_id: { contextId: "public", id: "gram" } },
@@ -146,22 +126,22 @@ describe("Unit of mesaure dsl", () => {
   });
 
   it("Allow updating an existing unit of measure", async () => {
-    const dsl = `unitOfMeasure gram {
+    const dsl = `unitOfMeasure gram 
     measuring weight
     defaultSymbol g
     aka gram, grams
-}`;
+`;
     const interpreter = await getCucinalistDMLInterpreter();
     await interpreter.executeDML(dsl);
     const namedEntity = await prisma.namedEntity.findUnique({
       where: { contextId_id: { contextId: "public", id: "gram" } },
     });
-    const dsl2 = `unitOfMeasure gram {
+    const dsl2 = `unitOfMeasure gram
     measuring weight
     defaultSymbol g
     plural g
     aka gram, grams, grammo, grammi
-}`;
+`;
     await interpreter.executeDML(dsl2);
     const namedEntity2 = await prisma.namedEntity.findUnique({
       where: { contextId_id: { contextId: "public", id: "gram" } },
@@ -251,6 +231,46 @@ describe("Ingredient dsl", () => {
     };
     expect(ingredient).toMatchObject(expectedIngredient);
   });
+
+  it('Reassign an existing ingredient', async () => {
+    const dsl = `
+      ingredient butter
+        fullname 'butter on a stick'
+        plural 'butters on sticks'
+        aka 'blocks of butter', 'fats of milks'
+        measuredAs capacity
+        
+      ingredient butter
+        fullname 'butter stick'
+        plural 'butter sticks'
+        aka 'block of butter', 'fat of milk'
+        measuredAs weight
+      `;
+    const interpreter = await getCucinalistDMLInterpreter();
+    await interpreter.executeDML(dsl);
+    const namedEntity = await prisma.namedEntity.findUnique({
+      where: { contextId_id: { contextId: "public", id: "butter" } },
+    });
+    expect(namedEntity).toBeDefined();
+    expect(namedEntity).not.toBeNull();
+    expect(namedEntity.id).toBe("butter");
+    expect(namedEntity.contextId).toBe("public");
+    expect(namedEntity.recordType).toBe("StoreBoughtIngredient");
+    const ingredient = await prisma.storeBoughtIngredient.findUnique({
+      include: { aka: true },
+      where: { id: namedEntity.recordId },
+    });
+    const expectedIngredient: Partial<
+      StoreBoughtIngredient & { aka: Array<{ synonym: string }> }
+    > = {
+      gblId: "butter",
+      name: "butter stick",
+      measuredAs: "weight",
+      plural: "butter sticks",
+      aka: [{ synonym: "block of butter" }, { synonym: "fat of milk" }],
+    };
+    expect(ingredient).toMatchObject(expectedIngredient);
+  })
 });
 
 describe("Recipe dsl", () => {
@@ -271,6 +291,82 @@ describe("Recipe dsl", () => {
           Partial<CookingStep & { cookingTechnique: { gblId: string } }>
         >;
       }
+    > = {
+      gblId: "breadSlice",
+      name: "breadSlice",
+      serves: 1,
+      ingredients: [
+        {
+          amount: 1,
+          unitOfMeasure: { gblId: "slice" },
+        },
+      ],
+      steps: [
+        {
+          cookingTechnique: { gblId: "serve" },
+        },
+      ],
+    };
+    const interpreter = await getCucinalistDMLInterpreter();
+    await interpreter.executeDML(dsl);
+    const namedEntity = await prisma.namedEntity.findUnique({
+      where: { contextId_id: { contextId: "public", id: "breadSlice" } },
+    });
+    expect(namedEntity).toBeDefined();
+    expect(namedEntity).not.toBeNull();
+    expect(namedEntity.id).toBe("breadSlice");
+    expect(namedEntity.contextId).toBe("public");
+    expect(namedEntity.recordType).toBe("Recipe");
+    const recipe = await prisma.recipe.findUnique({
+      include: {
+        ingredients: {
+          include: {
+            unitOfMeasure: true,
+          },
+          orderBy: {
+            sequence: "asc",
+          },
+        },
+        steps: {
+          include: {
+            cookingTechnique: true,
+          },
+          orderBy: {
+            sequence: "asc",
+          },
+        },
+      },
+      where: { id: namedEntity.recordId },
+    });
+    expect(recipe).toMatchObject(expectedRecipe);
+  });
+
+  it("Reassign minimal recipe with one ingredient and one step", async () => {
+    const dsl = `
+    recipe breadSlice
+      serves 2
+      ingredients
+        - 2 slices bread;
+      steps
+        - 'take out from fridge' bread;
+        - serve bread;
+        
+    recipe breadSlice
+      serves 1
+      ingredients
+        - 1 slice bread;
+      steps
+        - serve bread;
+    `;
+    const expectedRecipe: Partial<
+      Recipe & {
+      ingredients: Array<
+        Partial<RecipeIngredient & { unitOfMeasure: { gblId: string } }>
+      >;
+      steps: Array<
+        Partial<CookingStep & { cookingTechnique: { gblId: string } }>
+      >;
+    }
     > = {
       gblId: "breadSlice",
       name: "breadSlice",
@@ -755,6 +851,106 @@ describe("Single course meals", () => {
     expect(changes.length).toBe(3);
     const meal = await prisma.meal.findFirst({
       where: { id: changes[2].id },
+      include: {
+        courses: {
+          orderBy: {
+            sequence: "asc",
+          },
+        },
+      },
+    });
+    expect(meal).toBeDefined();
+    expect(meal).not.toBeNull();
+    expect(meal).toMatchObject(expectedMeal);
+    const firstMealCourseId = meal.courses[0].id;
+    const firstCourseRecipes = await prisma.courseRecipe.findMany({
+      where: { courseId: firstMealCourseId },
+      include: {
+        recipe: true,
+      },
+    });
+    expect(firstCourseRecipes).toHaveLength(1);
+    expect(firstCourseRecipes).toMatchObject(expectedMealRecipes[0]);
+
+    const secondMealCourseId = meal.courses[1].id;
+    const secondCourseRecipes = await prisma.courseRecipe.findMany({
+      where: { courseId: secondMealCourseId },
+      include: {
+        recipe: true,
+      },
+    });
+    expect(secondCourseRecipes).toHaveLength(1);
+    expect(secondCourseRecipes).toMatchObject(expectedMealRecipes[1]);
+  });
+
+  it("Reassign two courses meal with id", async () => {
+    const dsl = `recipe breadSlice
+      serves 1
+      ingredients
+        - 1 slice bread;
+      steps
+        - serve bread;
+        
+      recipe rawEgg
+      serves 1
+      ingredients
+        - 1 egg;
+      steps
+        - break egg -> brokenEgg;
+        - serve brokenEgg -> rawEgg;
+      
+      meal tonight
+        diners 2
+        course
+          - breadSlice;
+        course
+          - rawEgg;
+          
+      meal tonight fullName 'Scanvenge the fridge'
+        diners 3
+        course
+          - rawEgg;
+        course
+          - breadSlice;
+    `;
+    const expectedMealRecipes: Array<
+      Array<Partial<CourseRecipe & { recipe: { gblId: string } }>>
+    > = [
+      [
+        {
+          recipe: { gblId: "rawEgg" },
+          sequence: 1,
+        },
+      ],
+      [
+        {
+          recipe: { gblId: "breadSlice" },
+          sequence: 1,
+        },
+      ],
+    ];
+    const expectedMeal: Partial<
+      Meal & { courses: Array<Partial<MealCourse>> }
+    > = {
+      nDiners: 3,
+      gblId: "tonight",
+      fullName: "Scanvenge the fridge",
+      courses: [
+        {
+          sequence: 1,
+          name: null,
+        },
+        {
+          sequence: 2,
+          name: null,
+        },
+      ],
+    };
+    const interpreter = await getCucinalistDMLInterpreter();
+    const changes = await interpreter.executeDML(dsl);
+    expect(changes.length).toBe(4);
+    const meal = await prisma.meal.findFirst({
+      where: { id: changes[3].id },
       include: {
         courses: {
           orderBy: {
