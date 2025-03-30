@@ -125,4 +125,17 @@ export type CucinalistDMLStatement =
   | SwitchToContext;
 
 
-export type CucinalistDslAST = CucinalistDMLStatement[];
+export interface SelectStatement {
+  type: "SelectStatement";
+  target: 'Recipe' | 'Meal' | 'Ingredient' | 'UnitOfMeasure';
+  conditions: SelectCondition[];
+}
+
+export interface SelectCondition {
+  type: "SelectCondition";
+  field: string;
+  operator: '=' | '!=' | 'LIKE';
+  value: string;
+}
+
+export type CucinalistDslAST = Array<CucinalistDMLStatement | SelectStatement>;

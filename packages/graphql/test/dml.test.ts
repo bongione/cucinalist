@@ -755,7 +755,7 @@ describe("Single course meals", () => {
     > = {
       nDiners: 1,
       gblId: "tonight",
-      fullName: "Scanvenge the fridge",
+      name: "Scanvenge the fridge",
       courses: [
         {
           sequence: 1,
@@ -834,7 +834,7 @@ describe("Single course meals", () => {
     > = {
       nDiners: 2,
       gblId: "tonight",
-      fullName: "tonight",
+      name: "tonight",
       courses: [
         {
           sequence: 1,
@@ -934,7 +934,7 @@ describe("Single course meals", () => {
     > = {
       nDiners: 3,
       gblId: "tonight",
-      fullName: "Scanvenge the fridge",
+      name: "Scanvenge the fridge",
       courses: [
         {
           sequence: 1,

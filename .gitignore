@@ -11,3 +11,4 @@ dev.db*
 /packages/cucinalist-lang/out/
 coverage/
 /gen
+/packages/dsl/src/cucinalistLexer.tokens

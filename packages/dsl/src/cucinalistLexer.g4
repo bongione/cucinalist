@@ -45,6 +45,11 @@ AKA: [aA][kK][aA];
 SM: ';';
 LCURLY: '{';
 RCURLY: '}';
+EQUALS: '=';
+NOT_EQUALS: '!=';
+LIKE: [lL][iI][kK][eE];
+SELECT: [sS][eE][lL][eE][cC][tT];
+IF: [iI][fF];
 
 SINGLE_ID: [a-zA-Z][a-zA-Z_0-9]*;
 LQUOTE: '\'' -> more, pushMode(STR);

@@ -1,23 +1,19 @@
 type Query {
-  allRecipes: [Recipe]
+  qry(qryDsl: String!): [MergedElementType!]!
 }
 
 type Mutation {
   mergeFacts(cucinalistDsl: String!): MergeFactsOutcome!
 }
 
+union MergedElementType = Recipe | BoughtIngredient | UnitOfMeasure | CookingTechnique | Meal
+
 type MergeFactsOutcome {
   success: Boolean!
   message: String
-  mergedElements: MergedElements
+  mergedElements: [MergedElementType!]!
 }
 
-type MergedElements {
-  recipes: [Recipe]
-  boughtIngredients: [BoughtIngredient]
-  units: [UnitOfMeasure]
-  cookingTechniques: [CookingTechnique]
-}
 
 # A recipe represents a set of instructions for preparing a dish,
 # including a list of ingredients and steps to follow.
@@ -34,6 +30,7 @@ type Recipe {
 # A measuring feature is a property of a unit of measure that
 # describes what quality/feature is being measured by it.
 enum MeasuringFeature {
+  unspecified
   weight
   volume
   count
@@ -95,12 +92,14 @@ type CookingStep {
   semiActiveMinutes: Int!
 }
 
+union StepInputIngredientType = RecipeIngredient | StepOutputIngredient
+
 # A step precondition represents a condition that must be met before a cooking step can be performed.
 type StepPrecondition {
   typename: String!
   id: ID!
   description: String!
-  requiredIngredients: [StepInputIngredient!]!
+  requiredIngredients: [StepInputIngredientType!]!
 }
 
 # An intermediate ingredient is an ingredient that is created during the cooking process
@@ -110,8 +109,6 @@ type StepOutputIngredient {
   id: ID!
   name: String!
 }
-
-union StepInputIngredientType = RecipeIngredient | StepOutputIngredient
 
 # A process ingredient is an input to a cooking step, and can be either a recipe ingredient
 # or an intermediate ingredient.
@@ -141,4 +138,26 @@ type CookingTechnique {
   description: String
   outputFormatString: String
   ontologyUrls: [String!]
+}
+
+# A meal represents a collection of recipes that are served together,
+# organised into courses. A meal could well be a single recipe, in a single
+# course.
+type Meal {
+    typename: String!
+    id: ID!
+    name: String!
+    description: String
+    diners: Int!
+    courses: [MealCourse!]!
+}
+
+# A meal course represents a course in a meal, including a name
+# and a list of recipes that are served in that course.
+type MealCourse {
+    typename: String!
+    id: ID!
+    name: String!
+    description: String
+    recipes: [Recipe!]!
 }

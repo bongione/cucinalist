@@ -457,7 +457,7 @@ export async function processCreateMealStatement(
       ? executionContext.prisma().meal.create({
           data: {
             gblId: meal.id,
-            fullName: meal.name,
+            name: meal.name,
             description: meal.name,
             nDiners: meal.diners
           },
@@ -466,7 +466,7 @@ export async function processCreateMealStatement(
           where: { id: existingMeal.id },
           data: {
             gblId: meal.id || null,
-            fullName: meal.name || null,
+            name: meal.name || null,
             description: meal.name || null,
             nDiners: meal.diners,
             courses: {

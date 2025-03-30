@@ -97,7 +97,35 @@ export interface ExecutionContextManager extends ExecutionContext {
   switchToContext(id: string): Promise<ExecutionContext>;
 }
 
+
+/**
+ * The interpreter understands the DSL and executes it against the database, returning the database
+ * models, rather than the semantic models.
+ *
+ * A separate layer ought to populate the semantic models from the database models.
+ *
+ */
 export interface CucinalistDMLInterpreter {
+  /**
+   * The execution context tracks what context we are in, and what symbols are assigned to it.
+   */
   readonly executionContext: ExecutionContextManager;
+
+  /**
+   * Executes the DML statements against the database. All statements are executed in a transaction.
+   * We collate all the entities that are created or updated, and return them.
+   * The same object may appear multiple times in the result, if it was updated multiple times.
+   *
+   * @param dslStatements the update dsl statements to execute
+   */
   executeDML: (dslStatements: string) => Promise<Array<CucinalistModels[keyof CucinalistModels]>>;
+
+  /**
+   * Execute a query dsl statement against the database. The result is an array with the same length
+   * as the number of select statements.
+   * Each element of this array contains an array with the results of the select statement.
+   *
+   * @param dslStatements The query dsl statements to execute
+   */
+  executeDQL: (dslStatements: string) => Promise<Array<Array<CucinalistModels[keyof CucinalistModels]>>>;
 }

@@ -18,8 +18,9 @@ datasource db {
 }
 
 model Context {
-  id              String    @id
+  id              String  @id
   parentContextId String?
+
   parentContext   Context?  @relation("ParentContext", fields: [parentContextId], references: [id])
   chilrenContexts Context[] @relation("ParentContext")
 
@@ -58,8 +59,8 @@ model Recipe {
   updatedAt   DateTime @updatedAt
 
   ingredients   RecipeIngredient[] @relation("ingredients")
-  steps         CookingStep[]
   usedInRecipes RecipeIngredient[] @relation("producedByRecipe")
+  steps         CookingStep[]
   inCourses     CourseRecipe[]
 
   @@index([gblId], name: "ixRecipeGblId")
@@ -77,29 +78,31 @@ model RecipeIngredient {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  recipe                Recipe                       @relation(fields: [recipeId], references: [id], name: "ingredients", onDelete: Cascade)
-  storeBoughtIngredient StoreBoughtIngredient?       @relation(fields: [storeBoughtIngredientId], references: [id])
-  producedByRecipe      Recipe?                      @relation(fields: [producedByRecipeId], references: [id], name: "producedByRecipe")
-  unitOfMeasure         UnitOfMeasure                @relation(fields: [unitOfMeasureId], references: [id])
-  usedAsInput           StepInputIngredient[]
-  stepPreconditionOf    StepPreconditionIngredient[]
+  recipe                Recipe                 @relation(fields: [recipeId], references: [id], name: "ingredients", onDelete: Cascade)
+  storeBoughtIngredient StoreBoughtIngredient? @relation(fields: [storeBoughtIngredientId], references: [id])
+  producedByRecipe      Recipe?                @relation(fields: [producedByRecipeId], references: [id], name: "producedByRecipe")
+  unitOfMeasure         UnitOfMeasure          @relation(fields: [unitOfMeasureId], references: [id])
+
+  usedAsInput        StepInputIngredient[]
+  stepPreconditionOf StepPreconditionIngredient[]
 }
 
 model CookingStep {
-  id                String                 @id @default(cuid())
-  recipeId          String
-  sequence          Int
-  techniqueId       String
-  activeMinutes     Int?
-  parallelMinutes   Int?
-  keepEyeMinutes    Int?
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
+  id              String   @id @default(cuid())
+  recipeId        String
+  sequence        Int
+  techniqueId     String
+  activeMinutes   Int?
+  parallelMinutes Int?
+  keepEyeMinutes  Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
   recipe            Recipe                 @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  cookingTechnique  CookingTechnique       @relation(fields: [techniqueId], references: [id])
   inputIngredients  StepInputIngredient[]
   outputIngredients StepOutputIngredient[]
   preconditions     StepPrecondition[]
-  cookingTechnique  CookingTechnique       @relation(fields: [techniqueId], references: [id])
 }
 
 enum MeasuringFeature {
@@ -112,17 +115,17 @@ enum MeasuringFeature {
 }
 
 model UnitOfMeasure {
-  id            String                       @id @default(cuid())
+  id            String           @id @default(cuid())
   gblId         String
   name          String
   measuring     MeasuringFeature
   defaultSymbol String?
   plural        String?
-  synonyms      UnitOfMeasureAcceptedLabel[]
   ontologyUrl   String?
-  createdAt     DateTime                     @default(now())
-  updatedAt     DateTime                     @updatedAt
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
+  synonyms                  UnitOfMeasureAcceptedLabel[]
   mesuringRecipeIngredients RecipeIngredient[]
 
   @@index([gblId], name: "ixUnitOFMeasureGblId")
@@ -165,66 +168,70 @@ model StoreBoughtIngredient {
   updatedAt DateTime @updatedAt
 
   inRecipes RecipeIngredient[]
-
-  aka StoreBoughtIngredientSynonym[]
+  aka       StoreBoughtIngredientSynonym[]
 
   @@index([gblId], name: "ixStoreBoughtIngredientGblId")
 }
 
 model StoreBoughtIngredientSynonym {
-  id                      String                @id @default(cuid())
+  id                      String @id @default(cuid())
   storeBoughtIngredientId String
   synonym                 String
-  storeBoughtIngredient   StoreBoughtIngredient @relation(fields: [storeBoughtIngredientId], references: [id], onDelete: Cascade)
+
+  storeBoughtIngredient StoreBoughtIngredient @relation(fields: [storeBoughtIngredientId], references: [id], onDelete: Cascade)
 }
 
 model StepInputIngredient {
-  id                 String                @id @default(cuid())
+  id                 String  @id @default(cuid())
   cookingStepId      String
   sequence           Int
   prefix             String?
   portionOf          Float?
   outputIngredientId String?
   recipeIngredientId String?
-  cookingStep        CookingStep           @relation(fields: [cookingStepId], references: [id], onDelete: Cascade)
-  outputIngredient   StepOutputIngredient? @relation(fields: [outputIngredientId], references: [id])
-  recipeIngredient   RecipeIngredient?     @relation(fields: [recipeIngredientId], references: [id])
+
+  cookingStep      CookingStep           @relation(fields: [cookingStepId], references: [id], onDelete: Cascade)
+  outputIngredient StepOutputIngredient? @relation(fields: [outputIngredientId], references: [id])
+  recipeIngredient RecipeIngredient?     @relation(fields: [recipeIngredientId], references: [id])
 }
 
 model StepOutputIngredient {
-  id                           String                       @id @default(cuid())
-  cookingStepId                String
-  sequence                     Int
-  name                         String
-  usedAsInput                  StepInputIngredient[]
+  id            String @id @default(cuid())
+  cookingStepId String
+  sequence      Int
+  name          String
+
   cookingStep                  CookingStep                  @relation(fields: [cookingStepId], references: [id], onDelete: Cascade)
+  usedAsInput                  StepInputIngredient[]
   stepPreconditionIngredientOf StepPreconditionIngredient[]
 }
 
 model StepPrecondition {
-  id               String                       @id @default(cuid())
-  cookingStepId    String
-  sequence         Int
-  description      String
+  id            String @id @default(cuid())
+  cookingStepId String
+  sequence      Int
+  description   String
+
   cookingStep      CookingStep                  @relation(fields: [cookingStepId], references: [id], onDelete: Cascade)
   inputIngredients StepPreconditionIngredient[]
 }
 
 model StepPreconditionIngredient {
-  id                 String                @id @default(cuid())
+  id                 String  @id @default(cuid())
   sequence           Int
   stepPreconditionId String
   recipeIngredientId String?
   outputIngredientId String?
-  stepPrecondition   StepPrecondition      @relation(fields: [stepPreconditionId], references: [id], onDelete: Cascade)
-  outputIngredient   StepOutputIngredient? @relation(fields: [outputIngredientId], references: [id])
-  recipeIngredient   RecipeIngredient?     @relation(fields: [recipeIngredientId], references: [id])
+
+  stepPrecondition StepPrecondition      @relation(fields: [stepPreconditionId], references: [id], onDelete: Cascade)
+  outputIngredient StepOutputIngredient? @relation(fields: [outputIngredientId], references: [id])
+  recipeIngredient RecipeIngredient?     @relation(fields: [recipeIngredientId], references: [id])
 }
 
 model Meal {
   id          String   @id @default(cuid())
   gblId       String?
-  fullName    String?
+  name        String?
   description String?
   nDiners     Int
   createdAt   DateTime @default(now())

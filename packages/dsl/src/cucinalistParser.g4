@@ -3,7 +3,7 @@ parser grammar cucinalistParser;
 options {tokenVocab=cucinalistLexer;}
 
 program: (statement)*;
-statement: recipe | unitOfMeasure | ingredient | meal | include | context | createContext;
+statement: recipe | unitOfMeasure | ingredient | meal | include | context | createContext | select;
 
 include: INCLUDE fileToInclude=quotedString;
 context: CONTEXT contextId=id;
@@ -58,3 +58,14 @@ quotedString: STRING;
 meal: MEAL (mealId=id (FULLNAME fullname=quotedString)?)? DINERS nDiners=number ((RECIPES recipeLine+)|course+);
 course: COURSE (courseName=id)? recipeLine+;
 recipeLine: DASH recipeId=id SM;
+
+
+// Select statement
+
+select: SELECT selectTarget (IF selectCondition (AND selectCondition)*)? SM;
+selectTarget: RECIPE # recipeSelect
+    | INGREDIENT # ingredientSelect
+    | MEAL # mealSelect
+    | UNITOFMEASURE # unitOfMeasureSelect
+    | id # unknownSelect;
+selectCondition: targetField=id operator=(EQUALS|NOT_EQUALS|LIKE) targetValue=string;

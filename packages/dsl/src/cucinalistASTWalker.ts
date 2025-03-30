@@ -13,8 +13,11 @@ import {
   CreateContext,
   IncludeStatement,
   SwitchToContext,
-  CucinalistDslAST, BoughtIngredient
-} from './ASTModel'
+  CucinalistDslAST,
+  BoughtIngredient,
+  SelectStatement,
+  SelectCondition,
+} from "./ASTModel";
 import {
   ActiveMinutesTransitionContext,
   AmountRangeContext,
@@ -26,19 +29,25 @@ import {
   FloatAmountContext,
   IdContext,
   IdListContext,
-  IncludeContext, IngredientContext,
+  IncludeContext,
+  IngredientContext,
   IngredientLineContext,
   IngredientsContext,
+  IngredientSelectContext,
   IntAmountContext,
   KeepEyelMinutesTransitionContext,
   MealContext,
+  MealSelectContext,
   ParallellMinutesTransitionContext,
   ProgramContext,
   QuotedStringContext,
   RangeContext,
   RecipeContext,
   RecipeLineContext,
+  RecipeSelectContext,
   RecipeStepLineContext,
+  SelectConditionContext,
+  SelectContext,
   ServingContext,
   SingleMinuteTransitionContext,
   SingleNumberContext,
@@ -47,6 +56,7 @@ import {
   StringContext,
   StringListContext,
   UnitOfMeasureContext,
+  UnitOfMeasureSelectContext, UnknownSelectContext,
   UnquotedStringContext,
   WhenConditionContext
 } from './__generated__/cucinalistParser'
@@ -257,9 +267,9 @@ export class CucinalistASTWalker extends CucinalistListener {
         // easier for a non-programmer to understand
         const stepIndex = stepCtx.children.indexOf(stepLineCtx);
         step.produces.push({
-          type: 'CookingStepOutput',
+          type: "CookingStepOutput",
           outputId: `step_${stepIndex}_output`,
-        })
+        });
       }
     }
 
@@ -268,9 +278,12 @@ export class CucinalistASTWalker extends CucinalistListener {
 
   exitActiveMinutesTransition = (ctx: ActiveMinutesTransitionContext) => {
     const transitionData: TransitionData = {
-      activeMinutes: ctx._activeMinutes && ctx._activeMinutes.text && ctx._activeMinutes.start >= 0
-        ? parseInt(ctx._activeMinutes.text)
-        : 1,
+      activeMinutes:
+        ctx._activeMinutes &&
+        ctx._activeMinutes.text &&
+        ctx._activeMinutes.start >= 0
+          ? parseInt(ctx._activeMinutes.text)
+          : 1,
       inactiveMinutes: 0,
       keepAnEyeMinutes: 0,
     };
@@ -280,9 +293,10 @@ export class CucinalistASTWalker extends CucinalistListener {
   exitParallellMinutesTransition = (ctx: ParallellMinutesTransitionContext) => {
     const transitionData: TransitionData = {
       activeMinutes: 0,
-      inactiveMinutes: ctx._parallellMinutes && ctx._parallellMinutes.start >= 0
-        ? parseInt(ctx._parallellMinutes.text)
-        : 1,
+      inactiveMinutes:
+        ctx._parallellMinutes && ctx._parallellMinutes.start >= 0
+          ? parseInt(ctx._parallellMinutes.text)
+          : 1,
       keepAnEyeMinutes: 0,
     };
     this._ctxValues.set(ctx, transitionData);
@@ -301,9 +315,10 @@ export class CucinalistASTWalker extends CucinalistListener {
     const transitionData: TransitionData = {
       activeMinutes: 0,
       inactiveMinutes: 0,
-      keepAnEyeMinutes: ctx._keepEyelMinutes && ctx._keepEyelMinutes.start >= 0
-        ? parseInt(ctx._keepEyelMinutes.text)
-        : 1,
+      keepAnEyeMinutes:
+        ctx._keepEyelMinutes && ctx._keepEyelMinutes.start >= 0
+          ? parseInt(ctx._keepEyelMinutes.text)
+          : 1,
     };
     this._ctxValues.set(ctx, transitionData);
   };
@@ -448,13 +463,18 @@ export class CucinalistASTWalker extends CucinalistListener {
     const ingredient: BoughtIngredient = {
       type: "BoughtIngredient",
       id: this._ctxValues.get(ctx._ingredientId) as string,
-      name: (this._ctxValues.get(ctx._fullname) || this._ctxValues.get(ctx._ingredientId)) as string,
+      name: (this._ctxValues.get(ctx._fullname) ||
+        this._ctxValues.get(ctx._ingredientId)) as string,
       measuredAs: this._ctxValues.get(ctx._measuredAs) as string,
-      plural: ctx._plural ? this._ctxValues.get(ctx._plural) as string : undefined,
-      aka: ctx._akaList ? this._ctxValues.get(ctx._akaList) as string[] : undefined,
-    }
+      plural: ctx._plural
+        ? (this._ctxValues.get(ctx._plural) as string)
+        : undefined,
+      aka: ctx._akaList
+        ? (this._ctxValues.get(ctx._akaList) as string[])
+        : undefined,
+    };
     this._ctxValues.set(ctx, ingredient);
-  }
+  };
 
   exitInclude = (ctx: IncludeContext) => {
     const include: IncludeStatement = {
@@ -484,5 +504,88 @@ export class CucinalistASTWalker extends CucinalistListener {
       strings.push(this._ctxValues.get(idCtx) as string);
     }
     this._ctxValues.set(ctx, strings);
+  };
+
+  exitSelect = (ctx: SelectContext) => {
+    const originalText =(this._ctxValues.get(ctx.selectTarget()) as string) || ""
+    const targetText = originalText.toLowerCase();
+    const target =
+      targetText === "recipe"
+        ? ("Recipe" as const)
+        : targetText === "meal"
+          ? ("Meal" as const)
+          : targetText === "ingredient"
+            ? ("Ingredient" as const)
+            : targetText === "unitofmeasure"
+              ? ("UnitOfMeasure" as const)
+              : null;
+    if (target === null) {
+      throw new Error(`Unknown target type '${originalText}'`);
+    }
+    const conditionCtxs = ctx.selectCondition_list() || [];
+
+    const select: SelectStatement = {
+      type: "SelectStatement",
+      target,
+      conditions: conditionCtxs.map(
+        (ctx) => this._ctxValues.get(ctx) as SelectCondition,
+      ),
+    };
+    this._ctxValues.set(ctx, select);
+  };
+
+  exitIngredientSelect = (ctx: IngredientSelectContext) => {
+    this._ctxValues.set(ctx, "Ingredient");
+  };
+
+  exitRecipeSelect = (ctx: RecipeSelectContext) => {
+    this._ctxValues.set(ctx, "Recipe");
+  };
+
+  exitMealSelect = (ctx: MealSelectContext) => {
+    this._ctxValues.set(ctx, "Meal");
+  };
+
+  exitUnitOfMeasureSelect = (ctx: UnitOfMeasureSelectContext) => {
+    this._ctxValues.set(ctx, "UnitOfMeasure");
+  };
+
+  exitUnknownSelect = (ctx: UnknownSelectContext) => {
+    const text = this._ctxValues.get(ctx.id()) as string || '';
+    this._ctxValues.set(ctx, text || "UnknownType");
+  }
+
+  exitSelectCondition = (ctx: SelectConditionContext) => {
+    const fieldText = (
+      (this._ctxValues.get(ctx._targetField) as string) || ""
+    ).toLowerCase();
+    const operatorText = (
+      ctx._operator ? ctx._operator.text : ''
+    ).toLowerCase();
+    const valueText = (this._ctxValues.get(ctx._targetValue) as string) || "";
+    if (!fieldText) {
+      throw new Error("Field is required in condition");
+    }
+    if (fieldText !== "id" && fieldText !== "name") {
+      throw new Error(`Unknown field '${fieldText}'`);
+    }
+    const operator =
+      operatorText === "="
+        ? ("=" as const)
+        : operatorText === "!="
+          ? ("!=" as const)
+          : operatorText === "like"
+            ? ("LIKE" as const)
+            : null;
+    if (!operator) {
+      throw new Error(`Unknown operator '${operatorText}'`);
+    }
+    const condition: SelectCondition = {
+      type: "SelectCondition",
+      field: fieldText,
+      operator,
+      value: valueText,
+    };
+    this._ctxValues.set(ctx, condition);
   };
 }

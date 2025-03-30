@@ -13,13 +13,12 @@ import {
 } from './cucinalistDM'
 import { prisma  as prismaClient} from "./dao/extendedPrisma";
 import {createPrismaProvider} from './dao/PrismaProvider'
-
-let interpreter: CucinalistDMLInterpreter | null = null;
+import {processDslQuery} from './cucinalistDQ'
 
 export async function getCucinalistDMLInterpreter() {
   const prismaProvider = createPrismaProvider(prismaClient);
   const executionContext = await createAndInitExecutionContextManager(prismaProvider);
-  interpreter = {
+  const interpreter: CucinalistDMLInterpreter = {
     executionContext,
     executeDML: async (dmlStr: string) => {
       const statements = parseCucinalistDsl(dmlStr);
@@ -58,6 +57,19 @@ export async function getCucinalistDMLInterpreter() {
       });
       return newOrUpdatedEntities;
     },
+    executeDQL: async (dqlStr) => {
+      const statements = parseCucinalistDsl(dqlStr);
+      const queriesResults: Array<AssignableModels[keyof AssignableModels][]> = [];
+      for (const statement of statements) {
+        if (statement.type === "SelectStatement") {
+          const data = await processDslQuery(statement, executionContext);
+          queriesResults.push(data);
+        } else {
+          throw new Error(`Unknown statement type. We only accept select statements.`);
+        }
+      }
+      return queriesResults;
+    }
   };
   return interpreter;
 }
