@@ -1,5 +1,5 @@
 type Query {
-  qry(qryDsl: String!): [MergedElementType!]!
+  qry(qryDsl: String!): [[MergedElementType!]!]!
 }
 
 type Mutation {

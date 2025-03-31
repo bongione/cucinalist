@@ -73,6 +73,11 @@ export const prisma = new OriginalPrismaClient().$extends({
         compute: () => "StepPreconditionInputIngredient" as const,
       },
     },
+    stepPreconditionIngredient: {
+      type: {
+        compute: () => "StepPreconditionIngredient" as const,
+      }
+    },
     stepPreconditionType: {
       type: {
         compute: () => "StepPreconditionType" as const,

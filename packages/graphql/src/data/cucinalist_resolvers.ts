@@ -1,36 +1,51 @@
 import { Resolvers } from "../__generated__/cucinalist-resolvers-types";
-import { executeDML } from "./cuninalistDMLInterpreter";
-import {
-  Recipe,
-  RecipeIngredient,
-  StepOutputIngredient,
-} from "../__generated__/prismaClient";
+import { Recipe } from "../__generated__/prismaClient";
 
 export const cucinalistResolvers: Resolvers = {
   Query: {
-    allRecipes: async (parent, args, context) => {
-      return context.prisma.recipe.findMany();
+    qry: async (parent, args, context) => {
+      const qrysResults = await context.dmlInterpreter.executeDQL(args.qryDsl);
+      return qrysResults;
+    },
+  },
+  MergedElementType: {
+    __resolveType: (parent) => {
+      return parent.type === "StoreBoughtIngredient"
+        ? "BoughtIngredient"
+        : parent.type;
     },
   },
   Recipe: {
     ingredients: async (parent, args, context) => {
-      return context.prisma.recipeIngredient.findMany({
-        where: { recipeId: parent.id },
-      });
+      return context.dmlInterpreter.executionContext
+        .prisma()
+        .recipeIngredient.findMany({
+          where: { recipeId: parent.id },
+          orderBy: { sequence: "asc" },
+        });
     },
     steps: async (parent, args, context) => {
-      return context.prisma.cookingStep.findMany({
-        where: { recipeId: parent.id },
-      });
+      return context.dmlInterpreter.executionContext
+        .prisma()
+        .cookingStep.findMany({
+          where: { recipeId: parent.id },
+        });
     },
     id: (parent) => parent.gblId,
   },
   BoughtIngredient: {
     id: (parent) => parent.gblId,
-    units: () => [],
   },
   UnitOfMeasure: {
     id: (parent) => parent.gblId,
+    synonyms: async (parent, _, ctx) => {
+      const records = await ctx.dmlInterpreter.executionContext
+        .prisma()
+        .unitOfMeasureAcceptedLabel.findMany({
+          where: { unitOfMeasureId: parent.id },
+        });
+      return records.map((record) => record.label);
+    },
   },
   Ingredient: {
     __resolveType: (parent) =>
@@ -41,106 +56,139 @@ export const cucinalistResolvers: Resolvers = {
   StepInputIngredient: {
     ingredient: async (parent, args, context) => {
       if (parent.outputIngredientId) {
-        return context.prisma.stepOutputIngredient.findUnique({
-          where: { id: parent.outputIngredientId },
-        });
+        return context.dmlInterpreter.executionContext
+          .prisma()
+          .stepOutputIngredient.findUnique({
+            where: { id: parent.outputIngredientId },
+          });
       } else if (parent.recipeIngredientId) {
-        return context.prisma.recipeIngredient.findUnique({
-          where: { id: parent.recipeIngredientId },
-        });
+        return context.dmlInterpreter.executionContext
+          .prisma()
+          .recipeIngredient.findUnique({
+            where: { id: parent.recipeIngredientId },
+          });
       } else {
         throw new Error("Expected an output ingredient or recipe ingredient");
       }
     },
+    portionOf: (parent) =>
+      parent.portionOf !== null &&
+      typeof parent.portionOf === "number" &&
+      !Number.isNaN(parent.portionOf)
+        ? parent.portionOf
+        : 1,
   },
   StepInputIngredientType: {
-    __resolveType: (parent) =>
-      (parent as RecipeIngredient).amount &&
-      typeof (parent as RecipeIngredient).amount === "object"
-        ? "StepOutputIngredient"
-        : "RecipeIngredient",
+    __resolveType: (parent) => parent.type,
   },
   StepPrecondition: {
     requiredIngredients: async (parent, args, context) => {
-      const linkRecords =
-        await context.prisma.stepPreconditionInputIngredient.findMany({
+      const ings = await context.dmlInterpreter.executionContext
+        .prisma()
+        .stepPreconditionIngredient.findMany({
           where: { stepPreconditionId: parent.id },
         });
-      const records = await Promise.all(
-        linkRecords.map((link) =>
-          context.prisma.stepInputIngredient.findUnique({
-            where: { id: link.stepInputIngredientId },
-          }),
-        ),
-      );
-      return records;
+      return ings
+        .filter((i) => i.outputIngredientId || i.recipeIngredientId)
+        .map((ing) => {
+          if (ing.outputIngredientId) {
+            return context.dmlInterpreter.executionContext
+              .prisma()
+              .stepOutputIngredient.findUnique({
+                where: { id: ing.outputIngredientId },
+              });
+          } else {
+            return context.dmlInterpreter.executionContext
+              .prisma()
+              .recipeIngredient.findUnique({
+                where: { id: ing.recipeIngredientId },
+              });
+          }
+        });
     },
+  },
+  CookingTechnique: {
+    id: (parent) => parent.gblId,
   },
   CookingStep: {
     process: async (parent, args, context) => {
-      const technique = await context.resolverContext.resolveSymbol(
-        parent.techniqueId,
-      );
-      if (technique.type !== "CookingTechnique") {
-        throw new Error("Expected a cooking technique");
-      }
-      return technique;
+      return context.dmlInterpreter.executionContext
+        .prisma()
+        .cookingTechnique.findUnique({
+          where: { id: parent.techniqueId },
+        });
+      // const technique =
+      //   await context.dmlInterpreter.executionContext.resolveSymbol(
+      //     parent.techniqueId,
+      //   );
+      // if (technique.type !== "CookingTechnique") {
+      //   throw new Error("Expected a cooking technique");
+      // }
+      // return technique;
     },
     preconditions: async (parent, args, context) => {
-      return context.prisma.stepPrecondition.findMany({
-        where: { cookingStepId: parent.id },
-      });
+      return context.dmlInterpreter.executionContext
+        .prisma()
+        .stepPrecondition.findMany({
+          where: { cookingStepId: parent.id },
+        });
     },
     requires: async (parent, args, context) =>
-      context.prisma.stepInputIngredient.findMany({
-        where: { cookingStepId: parent.id },
-      }),
+      context.dmlInterpreter.executionContext
+        .prisma()
+        .stepInputIngredient.findMany({
+          where: { cookingStepId: parent.id },
+        }),
     produces: async (parent, args, context) =>
-      context.prisma.stepOutputIngredient.findMany({
-        where: { cookingStepId: parent.id },
-      }),
+      context.dmlInterpreter.executionContext
+        .prisma()
+        .stepOutputIngredient.findMany({
+          where: { cookingStepId: parent.id },
+        }),
+    activeMinutes: (parent) => parent.activeMinutes || 0,
+    inactiveMinutes: (parent) => parent.parallelMinutes || 0,
+    semiActiveMinutes: (parent) => parent.keepEyeMinutes || 0,
   },
   RecipeIngredient: {
     ingredient: async (parent, args, context) => {
-      const resolved = await context.resolverContext.resolveSymbol(
-        parent.storeBoughtIngredientId || parent.producedByRecipeId,
-      );
-      if (
-        resolved.type === "StoreBoughtIngredient" ||
-        resolved.type === "Recipe"
-      ) {
-        return resolved;
-      } else if (resolved.type === "UnresolvedId") {
-        throw new Error(
-          `Could not resolve ingredient ${String(parent.storeBoughtIngredientId || parent.producedByRecipeId)}`,
-        );
+      if (parent.storeBoughtIngredientId) {
+        return context.dmlInterpreter.executionContext
+          .prisma()
+          .storeBoughtIngredient.findUnique({
+            where: { id: parent.storeBoughtIngredientId },
+          });
+      } else if (parent.producedByRecipeId) {
+        return context.dmlInterpreter.executionContext
+          .prisma()
+          .recipe.findUnique({
+            where: { id: parent.producedByRecipeId },
+          });
       } else {
         throw new Error("Expected a store bought ingredient or a recipe");
       }
     },
     unit: async (parent, args, context) => {
-      const uom = await context.resolverContext.resolveSymbol(
-        parent.unitOfMeasureId,
-      );
-      if (uom.type === "UnresolvedId") {
-        throw new Error(
-          `Could not resolve unit of measure ${parent.unitOfMeasureId}`,
-        );
-      } else if (uom.type !== "UnitOfMeasure") {
-        throw new Error("Expected a unit of measure");
+      if (!parent.unitOfMeasureId) {
+        return null;
       }
-      return uom;
+      return context.dmlInterpreter.executionContext
+        .prisma()
+        .unitOfMeasure.findUnique({
+          where: { id: parent.unitOfMeasureId },
+        });
     },
+    quantity: (parent) => parent.amount || 0,
   },
   Mutation: {
     mergeFacts: async (parent, args, ctx) => {
       const { cucinalistDsl } = args;
       try {
-        await executeDML(ctx.prisma, cucinalistDsl);
-        return { success: true };
+        const mergedElements =
+          await ctx.dmlInterpreter.executeDML(cucinalistDsl);
+        return { success: true, mergedElements };
       } catch (e) {
         console.error(e);
-        return { success: false };
+        return { success: false, mergedElements: [] };
       }
     },
   },

@@ -1,5 +1,5 @@
 import {PrismaClient} from './extendedPrisma'
-import {PrismaInTx, PrismaProvider, PrismaTxProvider} from '../dmlTypes'
+import {PrismaInTx, PrismaTxProvider} from '../dmlTypes'
 
 export function createPrismaProvider(prisma: PrismaClient): PrismaTxProvider {
   const _prisma = prisma;

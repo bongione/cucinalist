@@ -47,6 +47,27 @@ export type CucinalistModels = {
   CourseRecipe: Awaited<ReturnType<Prisma["courseRecipe"]["findUnique"]>>;
 };
 
+export type RecipeTbl = CucinalistModels["Recipe"];
+export type RecipeIngredientTbl = CucinalistModels["RecipeIngredient"];
+export type StepOutputIngredientTbl =
+  CucinalistModels["StepOutputIngredient"];
+export type CookingTechniqueTbl = CucinalistModels["CookingTechnique"];
+export type CookingStepTbl = CucinalistModels["CookingStep"];
+export type UnitOfMeasureTbl = CucinalistModels["UnitOfMeasure"];
+export type UnitOfMeasureAcceptedLabelTbl =
+  CucinalistModels["UnitOfMeasureAcceptedLabel"];
+export type StepInputIngredientTbl =
+  CucinalistModels["StepInputIngredient"];
+export type StepPreconditionTbl = CucinalistModels["StepPrecondition"];
+export type StepPreconditionIngredientTbl =
+  CucinalistModels["StepPreconditionnIgredient"];
+export type ContextTbl = CucinalistModels["Context"];
+export type NamedEntityTbl = CucinalistModels["NamedEntity"];
+export type MealTbl = CucinalistModels["Meal"];
+export type MealCourseTbl = CucinalistModels["MealCourse"];
+export type CourseRecipeTbl = CucinalistModels["CourseRecipe"];
+export type StoreBoughtIngredientTbl = CucinalistModels["StoreBoughtIngredient"];
+
 type CucinalistModelName = keyof CucinalistModels;
 
 export type AssignableModels = Pick<
@@ -118,7 +139,7 @@ export interface CucinalistDMLInterpreter {
    *
    * @param dslStatements the update dsl statements to execute
    */
-  executeDML: (dslStatements: string) => Promise<Array<CucinalistModels[keyof CucinalistModels]>>;
+  executeDML: (dslStatements: string) => Promise<Array<AssignableModels[keyof AssignableModels]>>;
 
   /**
    * Execute a query dsl statement against the database. The result is an array with the same length
@@ -127,5 +148,5 @@ export interface CucinalistDMLInterpreter {
    *
    * @param dslStatements The query dsl statements to execute
    */
-  executeDQL: (dslStatements: string) => Promise<Array<Array<CucinalistModels[keyof CucinalistModels]>>>;
+  executeDQL: (dslStatements: string) => Promise<Array<Array<AssignableModels[keyof AssignableModels]>>>;
 }
