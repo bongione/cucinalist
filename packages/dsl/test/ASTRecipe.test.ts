@@ -290,12 +290,10 @@ describe("Simple recipes", () => {
             processId: "add",
             preconditions: [
               {
-                ingredientsNeeded: [
-                  {
-                    type: "CookingStepOutput",
-                    outputId: "boiledSaltedWater",
-                  },
-                ],
+                ingredientNeeded: {
+                  type: "CookingStepOutput",
+                  outputId: "boiledSaltedWater",
+                },
               },
             ],
             ingredients: [
@@ -333,12 +331,10 @@ describe("Simple recipes", () => {
             processId: "reserve",
             preconditions: [
               {
-                ingredientsNeeded: [
-                  {
-                    type: "CookingStepOutput",
-                    outputId: "cookingPasta",
-                  },
-                ],
+                ingredientNeeded: {
+                  type: "CookingStepOutput",
+                  outputId: "cookingPasta",
+                },
                 conditionDescription: "is tender",
               },
             ],
@@ -445,6 +441,7 @@ describe("Simple recipes", () => {
                 outputId: "step_9_output",
               },
             ],
+            isOptional: true
           },
           {
             // - serve pastaWithCondiment -> SpaghettiAglioOlioEPeperoncino;
@@ -481,7 +478,7 @@ describe("Simple recipes", () => {
       recipeAst.cookingSteps[0].ingredients[1],
     );
     expect(recipeAst.cookingSteps[0].produces[0]).toBe(
-      recipeAst.cookingSteps[4].preconditions[0].ingredientsNeeded[0],
+      recipeAst.cookingSteps[4].preconditions[0].ingredientNeeded,
     );
   });
 });

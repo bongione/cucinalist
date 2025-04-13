@@ -56,10 +56,11 @@ import {
   StringContext,
   StringListContext,
   UnitOfMeasureContext,
-  UnitOfMeasureSelectContext, UnknownSelectContext,
+  UnitOfMeasureSelectContext,
+  UnknownSelectContext,
   UnquotedStringContext,
-  WhenConditionContext
-} from './__generated__/cucinalistParser'
+  WhenConditionContext,
+} from "./__generated__/cucinalistParser";
 
 type TransitionData = Pick<
   CookingStep,
@@ -194,9 +195,9 @@ export class CucinalistASTWalker extends CucinalistListener {
 
   exitWhenCondition = (ctx: WhenConditionContext) => {
     const condition: StepPrecondition = {
-      ingredientsNeeded: [
-        this._resolveInputOrOutputId(this._ctxValues.get(ctx.id()) as string),
-      ],
+      ingredientNeeded: this._resolveInputOrOutputId(
+        this._ctxValues.get(ctx.id()) as string,
+      ),
     };
     if (ctx.string_()) {
       condition.conditionDescription = this._ctxValues.get(
@@ -507,7 +508,8 @@ export class CucinalistASTWalker extends CucinalistListener {
   };
 
   exitSelect = (ctx: SelectContext) => {
-    const originalText =(this._ctxValues.get(ctx.selectTarget()) as string) || ""
+    const originalText =
+      (this._ctxValues.get(ctx.selectTarget()) as string) || "";
     const targetText = originalText.toLowerCase();
     const target =
       targetText === "recipe"
@@ -551,16 +553,16 @@ export class CucinalistASTWalker extends CucinalistListener {
   };
 
   exitUnknownSelect = (ctx: UnknownSelectContext) => {
-    const text = this._ctxValues.get(ctx.id()) as string || '';
+    const text = (this._ctxValues.get(ctx.id()) as string) || "";
     this._ctxValues.set(ctx, text || "UnknownType");
-  }
+  };
 
   exitSelectCondition = (ctx: SelectConditionContext) => {
     const fieldText = (
       (this._ctxValues.get(ctx._targetField) as string) || ""
     ).toLowerCase();
     const operatorText = (
-      ctx._operator ? ctx._operator.text : ''
+      ctx._operator ? ctx._operator.text : ""
     ).toLowerCase();
     const valueText = (this._ctxValues.get(ctx._targetValue) as string) || "";
     if (!fieldText) {

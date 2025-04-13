@@ -1,5 +1,5 @@
 /**
- * THis is the abstract syntax model of data entered to model meals and recipes
+ * This is the abstract syntax model of data entered to model meals and recipes
  * in Cucinalist's DSL.
  *
  * Wherever there is an ID field, this refers to a global symbol table, that points
@@ -32,7 +32,7 @@ export type StepInput = RecipeIngredient | CookingStepOutput;
 
 export interface StepPrecondition {
   /** Could be either a recipe or a store bought ingredient */
-  ingredientsNeeded: StepInput[];
+  ingredientNeeded: StepInput;
   conditionDescription?: string;
 }
 
