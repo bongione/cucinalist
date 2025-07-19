@@ -3,10 +3,9 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { cucinalistResolvers } from "./data/cucinalist_resolvers";
 import { startStandaloneServer } from "@apollo/server/standalone";
-import { createAndInitExecutionContextManager } from "./data/executionContext";
 import { getCucinalistDMLInterpreter } from "./data/cuninalistDMLInterpreter";
 
-const typeDefs = readFileSync(join(__dirname, "./cheffie-schema.graphql"), {
+const typeDefs = readFileSync(join(__dirname, "./cucinalist-schema.graphql"), {
   encoding: "utf-8",
 });
 
@@ -26,4 +25,4 @@ async function startServer() {
   console.log(`🚀 Server ready at ${url}`);
 }
 
-startServer();
+startServer().then().catch(console.error);

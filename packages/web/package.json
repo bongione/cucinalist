@@ -1,20 +1,30 @@
 {
-  "name": "web",
-  "version": "0.0.0",
+  "name": "vite-min-template",
   "private": true,
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "build": "vite build",
-    "start": "vite"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@suid/material": "*",
-    "@suid/icons-material": "*",
-    "solid-js": "*"
+    "@mantine/core": "7.17.5",
+    "@mantine/form": "^7.17.5",
+    "@mantine/hooks": "7.17.5",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.6.1"
   },
   "devDependencies": {
-    "@suid/vite-plugin": "*",
-    "typescript": "^4.8.2",
-    "vite": "*",
-    "vite-plugin-solid": "*"
-  }
+    "@types/react": "^19.0.12",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "postcss": "^8.5.3",
+    "postcss-preset-mantine": "1.17.0",
+    "postcss-simple-vars": "^7.0.1",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.2"
+  },
+  "packageManager": "yarn@4.9.1"
 }

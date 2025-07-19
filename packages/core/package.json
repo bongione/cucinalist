@@ -1,0 +1,39 @@
+{
+  "name": "@cucinalist/core",
+  "displayName": "cucinalist-core",
+  "description": "Cucinalist core entities",
+  "version": "0.0.1",
+  "exports": {
+    "import": "./dist/index.mjs",
+    "require": "./dist/index.cjs"
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/types/index.d.ts",
+  "scripts": {
+    "build": "rollup --bundleConfigAsCjs -c",
+    "clean": "rm -rf dist",
+    "test": "vitest",
+    "test:cover": "vitest --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bongione/cucinalist.git"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-typescript": "^12.1.4",
+    "prettier": "^3.6.2",
+    "rollup": "^4.45.1",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  },
+  "keywords": [
+    "cucinalist",
+    "core-entities"
+  ],
+  "author": "Paolo F. Bongiovanni <paolo.bongiovanni@mindiply.com>",
+  "license": "MIT"
+}

@@ -1,85 +1,95 @@
-import Button from "@suid/material/Button";
-import Container from "@suid/material/Container";
-import Card from "@suid/material/Card";
-import { Stack, CardContent, Typography, TextField } from "@suid/material";
-import { createSignal } from "solid-js";
-import { Recipe as RecipeAST } from "@cucinalist/dsl";
+import "@mantine/core/styles.css";
+import { MantineProvider, Text, AppShell, Group, NavLink, Burger } from "@mantine/core";
+import { theme } from "./theme";
+import { MainEntityFormContextProvider } from "./__generated__/MainEntityFormContext.tsx";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Link,
+  useLocation,
+} from "react-router-dom";
+import { useDisclosure } from "@mantine/hooks";
 
-export default function App() {
-  const [recipeDSL, setRecipeDSL] = createSignal(emptyRecipeAST());
+function RecipesPage() {
+  return <Text size="lg">Browse, edit and create recipes</Text>;
+}
+
+function MealsPage() {
   return (
-    <Container maxWidth={false} sx={{ p: 0 }}>
-      <Stack
-        sx={{ bgcolor: "#cfe8fc", height: "100vh" }}
-        alignItems="center"
-        justifyContent="center"
-      >
-        <Card
-          sx={{
-            width: "80%",
-            maxWidth: "24rem",
-          }}
-        >
-          <CardContent>
-            <Stack spacing={3} direction="column">
-              <TextField
-                id="recipe-id"
-                label="Recipe id"
-                fullWidth
-                required
-                value={recipeDSL().id}
-                onChange={(e) =>
-                  setRecipeDSL((recipe) => ({
-                    ...recipe,
-                    id: e.currentTarget.value,
-                  }))
-                }
-              />
-              <TextField
-                id="recipe-full-name"
-                label="Recipe full name"
-                fullWidth
-                required
-                value={recipeDSL().name}
-                onChange={(e) =>
-                  setRecipeDSL((recipe) => ({
-                    ...recipe,
-                    name: e.currentTarget.value,
-                  }))
-                }
-              />
-              <TextField
-                id="Serves"
-                defaultValue="4"
-                label="Serves"
-                type="number"
-                fullWidth
-                required
-              />
-              <TextField
-                id="recipe-description"
-                defaultValue=""
-                label="Description"
-                multiline
-                minRows={5}
-                fullWidth
-              />
-              <Button variant="contained">{"Create recipe"}</Button>
-            </Stack>
-          </CardContent>
-        </Card>
-      </Stack>
-    </Container>
+    <Text size="lg">
+      Browse, edit and create meals. You can also create a meal plan from here.
+    </Text>
   );
 }
 
-function emptyRecipeAST(): RecipeAST {
-  return {
-    type: "Recipe",
-    id: "",
-    name: "",
-    serves: 0,
-    ingredients: [],
-    cookingSteps: [],
-  };
+function MealPlanExecutionPage() {
+  return (
+    <Text size="lg">
+      Pick a meal plan and start execution. Shows current and next steps, with
+      skip controls.
+    </Text>
+  );
+}
+
+function AppShellLayout() {
+  const location = useLocation();
+  const [opened, { toggle }] = useDisclosure();
+
+  return (
+    <AppShell
+      header={{ height: 60 }}
+      navbar={{ width: 220, breakpoint: "sm", collapsed: { mobile: !opened } }}
+    >
+      <AppShell.Header>
+        <Burger
+          opened={opened}
+          onClick={toggle}
+          hiddenFrom="sm"
+          size="sm"
+        />
+        <Group h="100%">Cucinalist</Group>
+      </AppShell.Header>
+      <AppShell.Navbar>
+        <NavLink
+          component={Link}
+          to="/recipes"
+          label="Recipes"
+          active={location.pathname === "/recipes"}
+        />
+        <NavLink
+          component={Link}
+          to="/meals"
+          label="Meals & Meal Plans"
+          active={location.pathname === "/meals"}
+        />
+        <NavLink
+          component={Link}
+          to="/execute"
+          label="Meal Plan Execution"
+          active={location.pathname === "/execute"}
+        />
+      </AppShell.Navbar>
+      <AppShell.Main>
+        <Routes>
+          <Route path="/recipes" element={<RecipesPage />} />
+          <Route path="/meals" element={<MealsPage />} />
+          <Route path="/execute" element={<MealPlanExecutionPage />} />
+          <Route path="*" element={<RecipesPage />} />
+        </Routes>
+      </AppShell.Main>
+    </AppShell>
+  );
+}
+
+export default function App() {
+  return (
+    <MantineProvider theme={theme}>
+      <MainEntityFormContextProvider>
+        <Router>
+          <AppShellLayout />
+        </Router>
+      </MainEntityFormContextProvider>
+    </MantineProvider>
+  );
 }
