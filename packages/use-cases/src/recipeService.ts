@@ -4,20 +4,28 @@ import {
   CookingTechniqueProvider,
   StoreBoughtIngredientProvider,
   UnitOfMeasureProvider,
-  validateRecipeInternalReferences
-} from '@cucinalist/core';
+  MeasuringFeatureProvider,
+  validateRecipeInternalReferences,
+} from "@cucinalist/core";
+import isEqual from "fast-deep-equal";
 
-export type RecipeInfo = Omit<Recipe, 'id'>;
+export type RecipeInfo = Omit<Recipe, "id">;
 
 export interface RecipeService extends RecipeProvider {
   createRecipe: (recipeInfo: RecipeInfo) => Promise<Recipe>;
-  updateRecipe: (id: string, recipeInfo: Partial<RecipeInfo>) => Promise<Recipe>;
+  updateRecipe: (
+    id: string,
+    recipeInfo: Partial<RecipeInfo>,
+  ) => Promise<Recipe>;
   deleteRecipe: (id: string) => Promise<void>;
 }
 
 export interface RecipeStorage {
   createRecipe: (recipeInfo: RecipeInfo) => Promise<Recipe>;
-  updateRecipe: (id: string, recipeInfo: Partial<RecipeInfo>) => Promise<Recipe>;
+  updateRecipe: (
+    id: string,
+    recipeInfo: Partial<RecipeInfo>,
+  ) => Promise<Recipe>;
   deleteRecipe: (id: string) => Promise<void>;
 }
 
@@ -25,34 +33,62 @@ export interface RecipeServiceDependencies {
   recipeStorage: RecipeStorage;
   recipeProvider: RecipeProvider;
   cookingTechniqueProvider: CookingTechniqueProvider;
-  storeBoughtIngredientProvider: StoreBoughtIngredientProvider;
+  ingredientProvider: StoreBoughtIngredientProvider;
+  measuringFeatureProvider: MeasuringFeatureProvider;
   unitOfMeasureProvider: UnitOfMeasureProvider;
 }
 
 export function createRecipeService(
   dependencies: RecipeServiceDependencies,
 ): RecipeService {
-  const {
-    recipeStorage,
-    recipeProvider,
-    cookingTechniqueProvider,
-    storeBoughtIngredientProvider,
-    unitOfMeasureProvider
-  } = dependencies;
+  const { recipeStorage, recipeProvider } = dependencies;
 
   return {
     ...recipeProvider,
     createRecipe: async (recipeInfo) => {
-      const existingRecipes = await recipeProvider.getRecipesByName(recipeInfo.name);
+      const existingRecipes = await recipeProvider.getRecipesByName(
+        recipeInfo.name,
+      );
       if (existingRecipes.some((r) => r.name === recipeInfo.name)) {
-        throw new Error(`Recipe with name "${recipeInfo.name}" already exists.`);
+        throw new Error(
+          `Recipe with name "${recipeInfo.name}" already exists.`,
+        );
       }
       // Validate references
-
+      const isValid = await validateRecipeInternalReferences(
+        recipeInfo,
+        dependencies,
+      );
+      if (!isValid) {
+        throw new Error("Recipe contains invalid references.");
+      }
       return recipeStorage.createRecipe(recipeInfo);
     },
-    updateRecipe: (id, recipeInfo) =>
-      recipeStorage.updateRecipe(id, recipeInfo),
-    deleteRecipe: (id) => recipeStorage.deleteRecipe(id),
+    updateRecipe: async (id, recipeInfo) => {
+      const existingRecipe = await recipeProvider.getRecipeById(id);
+      if (!existingRecipe) {
+        throw new Error(`Recipe with id "${id}" does not exist.`);
+      }
+      const updatedRecipe = Object.assign({}, existingRecipe, recipeInfo);
+      if (isEqual(existingRecipe, updatedRecipe)) {
+        return existingRecipe;
+      }
+      const isValid = await validateRecipeInternalReferences(
+        updatedRecipe,
+        dependencies,
+      );
+      if (!isValid) {
+        throw new Error("Recipe contains invalid references.");
+      }
+      return recipeStorage.updateRecipe(id, recipeInfo);
+    },
+
+    deleteRecipe: async (id) => {
+      const existingRecipe = await recipeProvider.getRecipeById(id);
+      if (!existingRecipe) {
+        throw new Error(`Recipe with id "${id}" does not exist.`);
+      }
+      return recipeStorage.deleteRecipe(id);
+    },
   };
 }

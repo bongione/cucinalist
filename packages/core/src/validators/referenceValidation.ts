@@ -2,23 +2,25 @@ import { Recipe, RecipeProvider } from "../entities/recipe";
 import { StoreBoughtIngredientProvider } from "../entities/ingredient";
 import {
   MeasuringFeatureProvider,
+  UnitOfMeasure,
   UnitOfMeasureProvider,
 } from "../entities/measurement";
 import { CookingTechniqueProvider } from "../entities/cooking-technique";
+import { Meal, MealProvider } from "../entities/meal";
+import { err, errAsync, ResultAsync } from "@cucinalist/fp-types";
+import { ok, okAsync } from "neverthrow";
 
 export interface ValidateMeasuringFeatureDependencies {
   measuringFeatureProvider: MeasuringFeatureProvider;
 }
 
-export async function validateMeasuringFeatureReference(
+export function validateMeasuringFeatureReference(
   measuringFeatureId: string,
   dependencies: ValidateMeasuringFeatureDependencies,
-): Promise<boolean> {
-  const measuringFeature =
-    await dependencies.measuringFeatureProvider.getMeasuringFeatureById(
-      measuringFeatureId,
-    );
-  return Boolean(measuringFeature);
+): ResultAsync<boolean, Error> {
+  return dependencies.measuringFeatureProvider
+    .getMeasuringFeatureById(measuringFeatureId)
+    .map((mf) => mf.isJust());
 }
 
 export interface ValidateUnitOfMeasureDependencies
@@ -26,22 +28,32 @@ export interface ValidateUnitOfMeasureDependencies
   unitOfMeasureProvider: UnitOfMeasureProvider;
 }
 
-export async function validateUnitOfMeasureReference(
+export function validateUnitOfMeasureReference(
   unitId: string,
   dependencies: ValidateUnitOfMeasureDependencies,
-): Promise<boolean> {
-  const unit =
-    await dependencies.unitOfMeasureProvider.getUnitOfMeasureById(unitId);
-  if (!unit) {
-    return false;
+): ResultAsync<boolean, Error> {
+  return dependencies.unitOfMeasureProvider
+    .getUnitOfMeasureById(unitId)
+    .andThen((md) =>
+      md.isJust()
+        ? validateUnitOfMeasureContents(md.extract(), dependencies)
+        : ok(false),
+    );
+
+}
+
+function validateUnitOfMeasureContents(
+  uom: UnitOfMeasure,
+  dependencies: ValidateUnitOfMeasureDependencies,
+): ResultAsync<boolean, Error> {
+  if (uom.measuringId) {
+    return validateMeasuringFeatureReference(uom.measuringId, dependencies);
   }
-  return unit.measuringId
-    ? validateMeasuringFeatureReference(unit.measuringId, dependencies)
-    : true;
+  return okAsync(true);
 }
 
 export interface ValidateIngredientDependencies {
-  storeBoughtIngredientProvider: StoreBoughtIngredientProvider;
+  ingredientProvider: StoreBoughtIngredientProvider;
 }
 
 export async function validateIngredientReference(
@@ -49,7 +61,7 @@ export async function validateIngredientReference(
   dependencies: ValidateIngredientDependencies,
 ): Promise<boolean> {
   const ingredient =
-    await dependencies.storeBoughtIngredientProvider.getStoreBoughtIngredientById(
+    await dependencies.ingredientProvider.getStoreBoughtIngredientById(
       ingredientId,
     );
   return Boolean(ingredient);
@@ -77,8 +89,13 @@ export interface RecipeReferenceValidationDependencies
   recipeProvider: RecipeProvider;
 }
 
+export interface MealReferenceValidationDependencies
+  extends RecipeReferenceValidationDependencies {
+  mealProvider: MealProvider;
+}
+
 export async function validateRecipeInternalReferences(
-  recipe: Omit<Recipe, "id">| Recipe,
+  recipe: Omit<Recipe, "id"> | Recipe,
   dependencies: RecipeReferenceValidationDependencies,
 ) {
   const ingredientsChecks = await Promise.all(
@@ -123,4 +140,34 @@ export async function validateRecipeReference(
     return false;
   }
   return validateRecipeInternalReferences(recipe, dependencies);
+}
+
+export async function validateMealInternalReferences(
+  meal: Omit<Meal, "id">,
+  dependencies: RecipeReferenceValidationDependencies,
+) {
+  for (const course of meal.courses) {
+    const recipeChecks = await Promise.all(
+      course.recipesIds.map(async (r) =>
+        r.type === "Recipe"
+          ? validateRecipeReference(r.id, dependencies)
+          : false,
+      ),
+    );
+    if (recipeChecks.includes(false)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export async function validateMealReference(
+  mealId: string,
+  dependencies: MealReferenceValidationDependencies,
+): Promise<boolean> {
+  const meal = await dependencies.mealProvider.getMealById(mealId);
+  if (!meal) {
+    return false;
+  }
+  return validateMealInternalReferences(meal, dependencies);
 }

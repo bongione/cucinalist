@@ -1,4 +1,4 @@
-export * from './entities/reference';
+export * from './types/reference';
 export * from './entities/measurement';
 export * from './entities/cooking-technique';
 export * from './entities/ingredient';

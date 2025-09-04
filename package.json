@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/bongione/cucinalist#readme",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "packages/utility/fp-types"
   ]
 }

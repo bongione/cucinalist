@@ -1,4 +1,4 @@
-import { IndexOf, Reference } from "./reference";
+import { IndexOf, Reference } from "../types/reference";
 
 /**
  * Represents a plan to deliver a meal, modelled as one or more preparation phases.
@@ -7,40 +7,62 @@ import { IndexOf, Reference } from "./reference";
  */
 export interface MealPlan {
   id: string;
-  mealId: Reference<'Meal'>;
+  mealId: Reference<"Meal">;
   prepPhases: MealPreparationPhase[];
 }
+
+export interface PlanStartNode {
+  type: "start";
+  nextNode: Exclude<PlanNode, PlanStartNode | JoinStepNode>;
+}
+
+export interface PlanEndNode {
+  type: "end";
+  previousNode: Exclude<PlanNode, PlanEndNode | PlanStepBranchNode>;
+}
+
+export interface PlanStepBranchNode {
+  type: "branch";
+  previousNode: PlanNode;
+  branchesTips: PlanNode[];
+}
+
+export interface JoinStepNode {
+  type: "join";
+  joiningNodes: MealPrepStepNode[];
+  nextNode: Exclude<PlanNode, PlanStartNode>;
+}
+export type PlanNode =
+  | PlanStepBranchNode
+  | MealPrepStepNode
+  | JoinStepNode
+  | PlanStartNode
+  | PlanEndNode;
 
 /**
  * Structure to represent a step in a recipe, including the course and recipe.
  */
-export interface MealPrepStep {
-  courseIndex: IndexOf<'meal.courses'>;
-  recipeIndex: IndexOf<'meal.courses.recipes'>;
-  stepIndex: IndexOf<'meal.courses.recipes.steps'>;
+export interface MealPrepStepNode {
+  type: "stepNode";
+  courseIndex: IndexOf<"meal.courses">;
+  recipeIndex: IndexOf<"meal.courses.recipes">;
+  stepIndex: IndexOf<"meal.courses.recipes.steps">;
+  nextStep: PlanNode;
+  previousStep: PlanNode;
 }
 
 /**
- * A meal preparation phase is a collection of steps. It allows breaking long
- * meal plans in distinct phases that can be done hours if not days apart.
+ * A meal preparation phase is a directed graph of step nodes that represent
+ * a potentially parallel preparation of a meal.
  */
 export interface MealPreparationPhase {
   id: string;
   name: string;
   description?: string;
 
-  preparationSteps: MealPrepStep[];
-}
-
-/**
- * A meal plan generator is responsible for generating a meal plan based on
- * a meal and the number of diners.
- */
-export interface MealPlanGenerator {
-  generateMealPlan: (
-    mealId: Reference<'Meal'>,
-    diners: number,
-  ) => Promise<MealPlan | null>;
+  firstStep: PlanStartNode;
+  lastStep: PlanEndNode;
+  defaultStepSequence: MealPrepStepNode[];
 }
 
 /**
@@ -49,7 +71,5 @@ export interface MealPlanGenerator {
  */
 export interface MealPlanProvider {
   getMealPlanById: (id: string) => Promise<MealPlan | null>;
-  getMealPlansByMealId: (
-    mealId: Reference<'Meal'>,
-  ) => Promise<MealPlan[]>;
+  getMealPlansByMealId: (mealId: Reference<"Meal">) => Promise<MealPlan[]>;
 }

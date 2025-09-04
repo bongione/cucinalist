@@ -1,4 +1,4 @@
-import { IndexOf, Reference } from "./reference";
+import { IndexOf, Reference } from "../types/reference";
 
 /**
  * Represents the execution of a meal plan. It tracks the progress of the meal

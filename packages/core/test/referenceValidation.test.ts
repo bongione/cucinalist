@@ -1,18 +1,21 @@
 import { describe, expect, it } from "vitest";
+import { Just, Nothing, okAsync, Maybe } from "@cucinalist/fp-types";
 import {
   AttentionNeeded,
   CookingTechnique,
   MeasuringFeature,
   Recipe,
-  RecipeReferenceValidationDependencies,
   StoreBoughtIngredient,
   UnitOfMeasure,
+  Meal,
   validateCookingTechniqueReference,
   validateIngredientReference,
   validateMeasuringFeatureReference,
   validateRecipeReference,
   validateRecipeInternalReferences,
   validateUnitOfMeasureReference,
+  MealReferenceValidationDependencies,
+  validateMealInternalReferences,
 } from "../src";
 
 function createStaticProviders(values: {
@@ -21,33 +24,41 @@ function createStaticProviders(values: {
   storeBoughtIngredients?: StoreBoughtIngredient[];
   cookingTechniques?: CookingTechnique[];
   recipes?: Recipe[];
-}): RecipeReferenceValidationDependencies {
+  Meals?: Meal[];
+}): MealReferenceValidationDependencies {
+  const measuringFeatures = values.measuringFeatures || [];
+  const unitsOfMeasure = values.unitsOfMeasure || [];
+  const storeBoughtIngredients = values.storeBoughtIngredients || [];
+  const cookingTechniques = values.cookingTechniques || [];
+  const recipes = values.recipes || [];
+  const Meals = values.Meals || [];
+
   return {
     measuringFeatureProvider: {
-      getMeasuringFeatureById: async (id: string) => {
-        return (
-          values.measuringFeatures?.find((feature) => feature.id === id) || null
+      getMeasuringFeatureById: (id: string) => {
+        return okAsync(
+          Maybe.fromNullable(
+            measuringFeatures.find((feature) => feature.id === id),
+          ),
         );
       },
-      getMeasuringFeaturesByName: async (name: string) => {
-        return (
-          values.measuringFeatures?.filter(
-            (feature) => feature.name === name,
-          ) || []
+      getMeasuringFeaturesByName: (name: string) => {
+        return okAsync(
+          measuringFeatures.filter((feature) => feature.name === name),
         );
       },
     },
     unitOfMeasureProvider: {
-      getUnitOfMeasureById: async (id: string) => {
-        return values.unitsOfMeasure?.find((unit) => unit.id === id) || null;
-      },
-      getUnitsOfMeasureByName: async (name: string) => {
-        return (
-          values.unitsOfMeasure?.filter((unit) => unit.name === name) || []
+      getUnitOfMeasureById: (id: string) => {
+        return okAsync(
+          Maybe.fromNullable(unitsOfMeasure.find((unit) => unit.id === id)),
         );
       },
+      getUnitsOfMeasureByName: (name: string) => {
+        return okAsync(unitsOfMeasure.filter((unit) => unit.name === name));
+      },
     },
-    storeBoughtIngredientProvider: {
+    ingredientProvider: {
       getStoreBoughtIngredientById: async (id: string) => {
         return (
           values.storeBoughtIngredients?.find(
@@ -91,6 +102,14 @@ function createStaticProviders(values: {
         );
       },
     },
+    mealProvider: {
+      getMealById: async (id: string) => {
+        return values.Meals?.find((meal) => meal.id === id) || null;
+      },
+      getMealsByName: async (name: string) => {
+        return values.Meals?.filter((meal) => meal.name === name) || [];
+      },
+    },
   };
 }
 
@@ -102,13 +121,13 @@ describe("No entities", () => {
       "nonexistent",
       dependencies,
     );
-    expect(measuringFeatureValid).toBeFalsy();
+    expect(measuringFeatureValid._unsafeUnwrap()).toBeFalsy();
 
     const unitOfMeasureValid = await validateUnitOfMeasureReference(
       "nonexistent",
       dependencies,
     );
-    expect(unitOfMeasureValid).toBeFalsy();
+    expect(unitOfMeasureValid._unsafeUnwrap()).toBeFalsy();
 
     const ingredientValid = await validateIngredientReference(
       "nonexistent",
@@ -159,12 +178,12 @@ describe("One entity of each type", () => {
             inputs: [
               {
                 ingredientIndex: { type: "RecipeIngredients", index: 0 },
-                portion: 1
+                portion: 1,
               },
             ],
-            produces: 'Out1',
+            produces: "Out1",
             dependsOn: [],
-            description: 'Boil the sugar with water',
+            description: "Boil the sugar with water",
           },
         ],
       },
@@ -184,18 +203,24 @@ describe("One entity of each type", () => {
     );
     expect(unitOfMeasureValid).toBeTruthy();
 
-    const ingredientValid = await validateIngredientReference("si1", dependencies);
+    const ingredientValid = await validateIngredientReference(
+      "si1",
+      dependencies,
+    );
     expect(ingredientValid).toBeTruthy();
 
-    const techniqueValid = await validateCookingTechniqueReference("ct1", dependencies);
+    const techniqueValid = await validateCookingTechniqueReference(
+      "ct1",
+      dependencies,
+    );
     expect(techniqueValid).toBeTruthy();
 
     const recipeValid = await validateRecipeReference("r1", dependencies);
     expect(recipeValid).toBeTruthy();
   });
 
-  it('Validate recipe info', async () => {
-    const recipeInfo: Omit<Recipe, 'id'> = {
+  it("Validate recipe info", async () => {
+    const recipeInfo: Omit<Recipe, "id"> = {
       name: "Sugar Syrup",
       servings: 4,
       ingredients: [
@@ -214,20 +239,22 @@ describe("One entity of each type", () => {
           inputs: [
             {
               ingredientIndex: { type: "RecipeIngredients", index: 0 },
-              portion: 1
+              portion: 1,
             },
           ],
-          produces: 'Out1',
+          produces: "Out1",
           dependsOn: [],
-          description: 'Boil the sugar with water',
+          description: "Boil the sugar with water",
         },
       ],
-    }
-    expect(await validateRecipeInternalReferences(recipeInfo, dependencies)).toBeTruthy();
+    };
+    expect(
+      await validateRecipeInternalReferences(recipeInfo, dependencies),
+    ).toBeTruthy();
   });
 
-  it('Should return false for invalid recipe references', async () => {
-    const invalidRecipe: Omit<Recipe, 'id'> = {
+  it("Should return false for invalid recipe references", async () => {
+    const invalidRecipe: Omit<Recipe, "id"> = {
       name: "Invalid Recipe",
       servings: 2,
       ingredients: [
@@ -244,17 +271,19 @@ describe("One entity of each type", () => {
           techniqueId: { type: "CookingTechnique", id: "ct1" },
           duration: { attention: AttentionNeeded.FullAttention, minutes: 5 },
           inputs: [],
-          produces: 'Out1',
+          produces: "Out1",
           dependsOn: [],
-          description: 'Invalid step',
+          description: "Invalid step",
         },
       ],
     };
 
-    expect(await validateRecipeInternalReferences(invalidRecipe, dependencies)).toBeFalsy();
-  })
+    expect(
+      await validateRecipeInternalReferences(invalidRecipe, dependencies),
+    ).toBeFalsy();
+  });
 
-  it('Should return false on self-reference', async () => {
+  it("Should return false on self-reference", async () => {
     const dependencies = createStaticProviders({
       measuringFeatures: [{ id: "mf1", name: "grams" }],
       unitsOfMeasure: [{ id: "uom1", name: "kilogram", measuringId: "mf1" }],
@@ -279,22 +308,231 @@ describe("One entity of each type", () => {
             {
               id: "step1",
               techniqueId: { type: "CookingTechnique", id: "ct1" },
-              duration: { attention: AttentionNeeded.FullAttention, minutes: 10 },
+              duration: {
+                attention: AttentionNeeded.FullAttention,
+                minutes: 10,
+              },
               inputs: [
                 {
                   ingredientIndex: { type: "RecipeIngredients", index: 0 },
-                  portion: 1
+                  portion: 1,
                 },
               ],
-              produces: 'Out1',
+              produces: "Out1",
               dependsOn: [],
-              description: 'Boil the sugar with water',
+              description: "Boil the sugar with water",
             },
           ],
         },
       ],
     });
 
-    expect(await validateRecipeReference('r1', dependencies)).toBeFalsy();
-  })
+    expect(await validateRecipeReference("r1", dependencies)).toBeFalsy();
+  });
+
+  it("Should return false on meal with recipe self-reference", async () => {
+    const dependencies = createStaticProviders({
+      measuringFeatures: [{ id: "mf1", name: "grams" }],
+      unitsOfMeasure: [{ id: "uom1", name: "kilogram", measuringId: "mf1" }],
+      storeBoughtIngredients: [
+        { id: "si1", name: "sugar", synonyms: [], measuredAsIds: ["uom1"] },
+      ],
+      cookingTechniques: [{ id: "ct1", name: "boiling" }],
+      recipes: [
+        {
+          id: "rc1",
+          name: "Recipe with Self Reference",
+          servings: 2,
+          ingredients: [
+            {
+              ingredientId: { type: "Recipe", id: "rc1" },
+              quantity: 100,
+              unitId: { type: "Unit", id: "uom1" },
+            },
+          ],
+          tags: [],
+          steps: [
+            {
+              id: "step1",
+              techniqueId: { type: "CookingTechnique", id: "ct1" },
+              duration: {
+                attention: AttentionNeeded.FullAttention,
+                minutes: 10,
+              },
+              inputs: [
+                {
+                  ingredientIndex: { type: "RecipeIngredients", index: 0 },
+                  portion: 1,
+                },
+              ],
+              produces: "Out1",
+              dependsOn: [],
+              description: "Cook the recipe with self reference",
+            },
+          ],
+        },
+      ],
+      Meals: [
+        {
+          id: "m1",
+          name: "Meal with Self Reference",
+          diners: 1,
+          courses: [
+            {
+              recipesIds: [{ type: "Recipe", id: "rc1" }],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(
+      await validateMealInternalReferences(
+        {
+          name: "Meal with Self Reference",
+          courses: [{ recipesIds: [{ type: "Recipe", id: "m1" }] }],
+          diners: 1,
+        },
+        dependencies,
+      ),
+    ).toBeFalsy();
+  });
+
+  it("Should return false on meal with invalid recipe reference", async () => {
+    const dependencies = createStaticProviders({
+      measuringFeatures: [{ id: "mf1", name: "grams" }],
+      unitsOfMeasure: [{ id: "uom1", name: "kilogram", measuringId: "mf1" }],
+      storeBoughtIngredients: [
+        { id: "si1", name: "sugar", synonyms: [], measuredAsIds: ["uom1"] },
+      ],
+      cookingTechniques: [{ id: "ct1", name: "boiling" }],
+      recipes: [
+        {
+          id: "rc1",
+          name: "Valid Recipe",
+          servings: 2,
+          ingredients: [
+            {
+              ingredientId: { type: "StoreBoughtIngredient", id: "si1" },
+              quantity: 100,
+              unitId: { type: "Unit", id: "uom1" },
+            },
+          ],
+          tags: [],
+          steps: [
+            {
+              id: "step1",
+              techniqueId: { type: "CookingTechnique", id: "ct1" },
+              duration: {
+                attention: AttentionNeeded.FullAttention,
+                minutes: 10,
+              },
+              inputs: [
+                {
+                  ingredientIndex: { type: "RecipeIngredients", index: 0 },
+                  portion: 1,
+                },
+              ],
+              produces: "Out1",
+              dependsOn: [],
+              description:
+                "This is a valid recipe that will be used in the meal.",
+            },
+          ],
+        },
+      ],
+      Meals: [
+        {
+          id: "m1",
+          name: "Meal with Invalid Recipe Reference",
+          diners: 2,
+          courses: [
+            {
+              recipesIds: [{ type: "Recipe", id: "nonexistent" }],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(
+      await validateMealInternalReferences(
+        {
+          name: "Meal with Invalid Recipe Reference",
+          courses: [{ recipesIds: [{ type: "Recipe", id: "nonexistent" }] }],
+          diners: 2,
+        },
+        dependencies,
+      ),
+    ).toBeFalsy();
+  });
+
+  it("Should return true on valid meal with recipe references", async () => {
+    const dependencies = createStaticProviders({
+      measuringFeatures: [{ id: "mf1", name: "grams" }],
+      unitsOfMeasure: [{ id: "uom1", name: "kilogram", measuringId: "mf1" }],
+      storeBoughtIngredients: [
+        { id: "si1", name: "sugar", synonyms: [], measuredAsIds: ["uom1"] },
+      ],
+      cookingTechniques: [{ id: "ct1", name: "boiling" }],
+      recipes: [
+        {
+          id: "rc1",
+          name: "Valid Recipe",
+          servings: 2,
+          ingredients: [
+            {
+              ingredientId: { type: "StoreBoughtIngredient", id: "si1" },
+              quantity: 100,
+              unitId: { type: "Unit", id: "uom1" },
+            },
+          ],
+          tags: [],
+          steps: [
+            {
+              id: "step1",
+              techniqueId: { type: "CookingTechnique", id: "ct1" },
+              duration: {
+                attention: AttentionNeeded.FullAttention,
+                minutes: 10,
+              },
+              inputs: [
+                {
+                  ingredientIndex: { type: "RecipeIngredients", index: 0 },
+                  portion: 1,
+                },
+              ],
+              produces: "Out1",
+              dependsOn: [],
+              description:
+                "This is a valid recipe that will be used in the meal.",
+            },
+          ],
+        },
+      ],
+      Meals: [
+        {
+          id: "m1",
+          name: "Meal with Valid Recipe Reference",
+          diners: 2,
+          courses: [
+            {
+              recipesIds: [{ type: "Recipe", id: "rc1" }],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(
+      await validateMealInternalReferences(
+        {
+          name: "Meal with Valid Recipe Reference",
+          courses: [{ recipesIds: [{ type: "Recipe", id: "rc1" }] }],
+          diners: 2,
+        },
+        dependencies,
+      ),
+    ).toBeTruthy();
+  });
 });

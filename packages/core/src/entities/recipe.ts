@@ -1,4 +1,4 @@
-import { IndexOf, Reference } from "./reference";
+import { IndexOf, Reference } from "../types/reference";
 
 /**
  * A recipe describes how to prepare a dish, including the ingredients and steps

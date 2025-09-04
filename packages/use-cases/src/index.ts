@@ -12,7 +12,7 @@ export {
   CookingTechniqueServiceDependencies,
   CookingTechniqueService,
   CookingTechniqueStorage,
-  createCookingTechniqueService
+  createCookingTechniqueService,
 } from "./cookingTechinqueService";
 
 export {
@@ -20,5 +20,21 @@ export {
   IngredientStorage,
   StoreBoughtIngredientInfo,
   IngredientServiceDependencies,
-  createIngredientService
-} from './ingredientService';
+  createIngredientService,
+} from "./ingredientService";
+
+export {
+  RecipeService,
+  RecipeServiceDependencies,
+  RecipeStorage,
+  RecipeInfo,
+  createRecipeService,
+} from "./recipeService";
+
+export {
+  MealInfo,
+  MealService,
+  MealServiceDependencies,
+  MealStorage,
+  createMealService
+} from './mealService';

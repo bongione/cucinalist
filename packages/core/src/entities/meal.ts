@@ -1,4 +1,4 @@
-import { Reference } from "./reference";
+import { Reference } from "../types/reference";
 
 /**
  * A meal is where you collect recipes to be prepared together, grouped in
@@ -24,5 +24,4 @@ export interface Course {
 export interface MealProvider {
   getMealById: (id: string) => Promise<Meal | null>;
   getMealsByName: (name: string) => Promise<Meal[]>;
-  getMealsByRecipeId: (recipeId: string) => Promise<Meal[]>;
 }

@@ -1,11 +1,34 @@
-import { CookingTechnique, MeasuringFeature, UnitOfMeasure, StoreBoughtIngredient } from "@cucinalist/core";
-import { MeasurementServiceDependencies } from "../src/measurementServices";
-import { CookingTechniqueServiceDependencies } from "../src/cookingTechinqueService";
-import { IngredientServiceDependencies } from "../src";
+import {
+  CookingTechnique,
+  MeasuringFeature,
+  UnitOfMeasure,
+  StoreBoughtIngredient,
+  Recipe,
+  Meal
+} from "@cucinalist/core";
+import {
+  MeasurementServiceDependencies,
+  CookingTechniqueServiceDependencies,
+  IngredientServiceDependencies,
+  RecipeServiceDependencies,
+  MealServiceDependencies, createRecipeService
+} from "../src";
 
-export function createNaiveMeasurementServiceDependencies(): MeasurementServiceDependencies {
-  const features: Map<string, MeasuringFeature> = new Map();
-  const units: Map<string, UnitOfMeasure> = new Map();
+interface MeasurementServiceData {
+  measuringFeatures?: MeasuringFeature[];
+  unitsOfMeasure?: UnitOfMeasure[];
+}
+
+export function createNaiveMeasurementServiceDependencies({
+  measuringFeatures = [],
+  unitsOfMeasure = [],
+}: MeasurementServiceData = {}): MeasurementServiceDependencies {
+  const features: Map<string, MeasuringFeature> = new Map(
+    measuringFeatures.map((f) => [f.id, f]),
+  );
+  const units: Map<string, UnitOfMeasure> = new Map(
+    unitsOfMeasure.map((u) => [u.id, u]),
+  );
   return {
     measuringFeatureProvider: {
       getMeasuringFeatureById: async (id: string) => {
@@ -62,8 +85,16 @@ export function createNaiveMeasurementServiceDependencies(): MeasurementServiceD
   };
 }
 
-export function createNaiveCookingTechniqueServiceDependencies(): CookingTechniqueServiceDependencies {
-  const techniques: Map<string, CookingTechnique> = new Map();
+interface CookingTechniqueServiceData {
+  cookingTechniques?: CookingTechnique[];
+}
+
+export function createNaiveCookingTechniqueServiceDependencies({
+  cookingTechniques = [],
+}: CookingTechniqueServiceData = {}): CookingTechniqueServiceDependencies {
+  const techniques: Map<string, CookingTechnique> = new Map(
+    cookingTechniques.map((c) => [c.id, c]),
+  );
   return {
     cookingTechniqueProvider: {
       getCookingTechniqueById: async (id: string) => {
@@ -96,8 +127,16 @@ export function createNaiveCookingTechniqueServiceDependencies(): CookingTechniq
   };
 }
 
-export function createNaiveIngredientServiceDependencies(): IngredientServiceDependencies {
-  const ingredients: Map<string, StoreBoughtIngredient> = new Map();
+interface IngredientServiceData {
+  storeBoughtIngredients?: StoreBoughtIngredient[];
+}
+
+export function createNaiveIngredientServiceDependencies({
+  storeBoughtIngredients = [],
+}: IngredientServiceData = {}): IngredientServiceDependencies {
+  const ingredients: Map<string, StoreBoughtIngredient> = new Map(
+    storeBoughtIngredients.map((i) => [i.id, i]),
+  );
   return {
     ingredientProvider: {
       getStoreBoughtIngredientById: async (id: string) => {
@@ -127,5 +166,93 @@ export function createNaiveIngredientServiceDependencies(): IngredientServiceDep
         ingredients.delete(id);
       },
     },
-  }
+  };
+}
+
+interface RecipeServiceData
+  extends IngredientServiceData,
+    MeasurementServiceData,
+    CookingTechniqueServiceData {
+  recipes?: Recipe[]; // Replace 'any' with actual recipe type
+}
+
+export function createNaiveRecipeServiceDependencies(
+  data: RecipeServiceData = {},
+): RecipeServiceDependencies {
+  const recipes: Map<string, any> = new Map(
+    (data.recipes || []).map((r) => [r.id, r]),
+  );
+  return {
+    ...createNaiveCookingTechniqueServiceDependencies(data),
+    ...createNaiveMeasurementServiceDependencies(data),
+    ...createNaiveIngredientServiceDependencies(data),
+    recipeProvider: {
+      getRecipeById: async (id: string) => {
+        return recipes.get(id) || null;
+      },
+      getRecipesByName: async (name: string) => {
+        return Array.from(recipes.values()).filter(
+          (recipe) => recipe.name === name,
+        );
+      },
+      getRecipesByTag: async () => []
+    },
+    recipeStorage: {
+      createRecipe: async (recipeInfo) => {
+        const id = crypto.randomUUID();
+        const recipe = { id, ...recipeInfo };
+        recipes.set(id, recipe);
+        return recipe;
+      },
+      updateRecipe: async (id, recipeInfo) => {
+        if (!recipes.has(id)) throw new Error("Recipe not found");
+        const updatedRecipe = { ...recipes.get(id), ...recipeInfo };
+        recipes.set(id, updatedRecipe);
+        return updatedRecipe;
+      },
+      deleteRecipe: async (id) => {
+        if (!recipes.has(id)) throw new Error("Recipe not found");
+        recipes.delete(id);
+      },
+    },
+  };
+}
+
+interface MealServiceData
+  extends RecipeServiceData {
+  meals?: Meal[]; // Replace 'any' with actual recipe type
+}
+
+export function createNaiveMealServiceDependencies(data: MealServiceData = {}): MealServiceDependencies {
+  const meals: Map<string, Meal> = new Map(data.meals ? data.meals.map((m) => [m.id, m]) : []);
+  // Placeholder for meal service dependencies
+  return {
+    ...createNaiveRecipeServiceDependencies(data),
+    mealProvider: {
+      getMealById: async (id: string) => {
+        return meals.get(id) || null;
+      },
+      getMealsByName: async (name: string) => {
+        return (Array.from(meals.values())).filter((meal) => meal.name === name);
+      },
+    },
+    mealStorage: {
+      createMeal: async (mealInfo) => {
+        const id = crypto.randomUUID();
+        const meal = { id, ...mealInfo };
+        meals.set(id, meal);
+        return meal;
+      },
+      updateMeal: async (id, mealInfo) => {
+        if (!meals.has(id)) throw new Error("Meal not found");
+        const updatedMeal = { ...meals.get(id), ...mealInfo };
+        meals.set(id, updatedMeal);
+        return updatedMeal;
+      },
+      deleteMeal: async (id) => {
+        if (!meals.has(id)) throw new Error("Meal not found");
+        meals.delete(id);
+      },
+    }
+  };
 }
