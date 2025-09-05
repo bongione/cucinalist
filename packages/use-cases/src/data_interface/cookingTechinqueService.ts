@@ -1,4 +1,4 @@
-import { CookingTechnique, CookingTechniqueProvider } from "@cucinalist/core";
+import { CookingTechnique, CookingTechniqueProvider } from "packages/core/dist/index.mjs";
 
 export type CookingTechniqueInfo = Omit<CookingTechnique, "id">;
 

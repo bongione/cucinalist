@@ -1,4 +1,4 @@
-import { Maybe, ResultAsync } from "@cucinalist/fp-types";
+import { ResultAsync } from "@cucinalist/fp-types";
 
 export interface MeasuringFeature {
   id: string;
@@ -8,7 +8,7 @@ export interface MeasuringFeature {
 export interface MeasuringFeatureProvider {
   getMeasuringFeatureById: (
     id: string,
-  ) => ResultAsync<Maybe<MeasuringFeature>, Error>;
+  ) => ResultAsync<MeasuringFeature | null, Error>;
   getMeasuringFeaturesByName: (
     name: string,
   ) => ResultAsync<MeasuringFeature[], Error>;
@@ -26,7 +26,7 @@ export interface UnitOfMeasure {
 export interface UnitOfMeasureProvider {
   getUnitOfMeasureById: (
     id: string,
-  ) => ResultAsync<Maybe<UnitOfMeasure>, Error>;
+  ) => ResultAsync<UnitOfMeasure | null, Error>;
   getUnitsOfMeasureByName: (
     name: string,
   ) => ResultAsync<UnitOfMeasure[], Error>;

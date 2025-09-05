@@ -1,3 +1,4 @@
+import {ResultAsync} from '@cucinalist/fp-types'
 import { IndexOf, Reference } from "../types/reference";
 
 /**
@@ -15,5 +16,5 @@ export interface MealExecution {
 }
 
 export interface MealExecutionProvider {
-  getMealExecutionById: (id: string) => Promise<MealExecution | null>;
+  getMealExecutionById: (id: string) => ResultAsync<MealExecution | null, Error>;
 }

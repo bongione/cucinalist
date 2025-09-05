@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Just, Nothing, okAsync, Maybe } from "@cucinalist/fp-types";
+import { okAsync, ResultAsync } from "@cucinalist/fp-types";
 import {
   AttentionNeeded,
   CookingTechnique,
@@ -12,10 +12,10 @@ import {
   validateIngredientReference,
   validateMeasuringFeatureReference,
   validateRecipeReference,
-  validateRecipeInternalReferences,
+  validateRecipe,
   validateUnitOfMeasureReference,
   MealReferenceValidationDependencies,
-  validateMealInternalReferences,
+  validateMealContents,
 } from "../src";
 
 function createStaticProviders(values: {
@@ -24,91 +24,87 @@ function createStaticProviders(values: {
   storeBoughtIngredients?: StoreBoughtIngredient[];
   cookingTechniques?: CookingTechnique[];
   recipes?: Recipe[];
-  Meals?: Meal[];
+  meals?: Meal[];
 }): MealReferenceValidationDependencies {
   const measuringFeatures = values.measuringFeatures || [];
   const unitsOfMeasure = values.unitsOfMeasure || [];
   const storeBoughtIngredients = values.storeBoughtIngredients || [];
   const cookingTechniques = values.cookingTechniques || [];
   const recipes = values.recipes || [];
-  const Meals = values.Meals || [];
+  const meals = values.meals || [];
 
   return {
     measuringFeatureProvider: {
-      getMeasuringFeatureById: (id: string) => {
-        return okAsync(
-          Maybe.fromNullable(
-            measuringFeatures.find((feature) => feature.id === id),
-          ),
-        );
-      },
-      getMeasuringFeaturesByName: (name: string) => {
-        return okAsync(
+      getMeasuringFeatureById: ResultAsync.fromThrowable(
+        async (id: string) =>
+          measuringFeatures.find((feature) => feature.id === id) || null,
+        (e) => new Error(String(e)),
+      ),
+      getMeasuringFeaturesByName: ResultAsync.fromThrowable(
+        async (name: string) =>
           measuringFeatures.filter((feature) => feature.name === name),
-        );
-      },
+        (e) => new Error(String(e)),
+      ),
     },
     unitOfMeasureProvider: {
-      getUnitOfMeasureById: (id: string) => {
-        return okAsync(
-          Maybe.fromNullable(unitsOfMeasure.find((unit) => unit.id === id)),
-        );
-      },
+      getUnitOfMeasureById: ResultAsync.fromThrowable(
+        async (id: string) =>
+          unitsOfMeasure.find((unit) => unit.id === id) || null,
+        (e) => new Error(String(e)),
+      ),
       getUnitsOfMeasureByName: (name: string) => {
         return okAsync(unitsOfMeasure.filter((unit) => unit.name === name));
       },
     },
     ingredientProvider: {
-      getStoreBoughtIngredientById: async (id: string) => {
-        return (
-          values.storeBoughtIngredients?.find(
-            (ingredient) => ingredient.id === id,
-          ) || null
-        );
-      },
-      getStoreBoughtIngredientsByName: async (name: string) => {
-        return (
-          values.storeBoughtIngredients?.filter(
+      getStoreBoughtIngredientById: ResultAsync.fromThrowable(
+        async (id: string) =>
+          storeBoughtIngredients.find((ingredient) => ingredient.id === id) ||
+          null,
+        (e) => new Error(String(e)),
+      ),
+      getStoreBoughtIngredientsByName: ResultAsync.fromThrowable(
+        async (name: string) =>
+          storeBoughtIngredients.filter(
             (ingredient) => ingredient.name === name,
-          ) || []
-        );
-      },
+          ) || [],
+        (e) => new Error(String(e)),
+      ),
     },
     cookingTechniqueProvider: {
-      getCookingTechniqueById: async (id: string) => {
-        return (
-          values.cookingTechniques?.find((technique) => technique.id === id) ||
-          null
-        );
-      },
-      getCookingTechniquesByName: async (name: string) => {
-        return (
-          values.cookingTechniques?.filter(
-            (technique) => technique.name === name,
-          ) || []
-        );
-      },
+      getCookingTechniqueById: ResultAsync.fromThrowable(
+        async (id: string) =>
+          cookingTechniques?.find((technique) => technique.id === id) || null,
+        (e) => new Error(String(e)),
+      ),
+      getCookingTechniquesByName: ResultAsync.fromThrowable(
+        async (name: string) =>
+          cookingTechniques.filter((technique) => technique.name === name),
+        (e) => new Error(String(e)),
+      ),
     },
     recipeProvider: {
-      getRecipeById: async (id: string) => {
-        return values.recipes?.find((recipe) => recipe.id === id) || null;
-      },
-      getRecipesByName: async (name: string) => {
-        return values.recipes?.filter((recipe) => recipe.name === name) || [];
-      },
-      getRecipesByTag: async (tag: string) => {
-        return (
-          values.recipes?.filter((recipe) => recipe.tags?.includes(tag)) || []
-        );
-      },
+      getRecipeById: ResultAsync.fromThrowable(
+        async (id: string) =>
+          recipes.find((recipe) => recipe.id === id) || null,
+        (e) => new Error(String(e)),
+      ),
+      getRecipesByName: ResultAsync.fromThrowable(
+        async (name: string) =>
+          recipes.filter((recipe) => recipe.name === name) || [],
+        (e) => new Error(String(e)),
+      ),
     },
     mealProvider: {
-      getMealById: async (id: string) => {
-        return values.Meals?.find((meal) => meal.id === id) || null;
-      },
-      getMealsByName: async (name: string) => {
-        return values.Meals?.filter((meal) => meal.name === name) || [];
-      },
+      getMealById: ResultAsync.fromThrowable(
+        async (id: string) => meals.find((meal) => meal.id === id) || null,
+        (e) => new Error(String(e)),
+      ),
+      getMealsByName: ResultAsync.fromThrowable(
+        async (name: string) =>
+          meals.filter((meal) => meal.name === name) || [],
+        (e) => new Error(String(e)),
+      ),
     },
   };
 }
@@ -121,31 +117,31 @@ describe("No entities", () => {
       "nonexistent",
       dependencies,
     );
-    expect(measuringFeatureValid._unsafeUnwrap()).toBeFalsy();
+    expect(measuringFeatureValid.unwrapOr(true)).toBeFalsy();
 
     const unitOfMeasureValid = await validateUnitOfMeasureReference(
       "nonexistent",
       dependencies,
     );
-    expect(unitOfMeasureValid._unsafeUnwrap()).toBeFalsy();
+    expect(unitOfMeasureValid.unwrapOr(true)).toBeFalsy();
 
     const ingredientValid = await validateIngredientReference(
       "nonexistent",
       dependencies,
     );
-    expect(ingredientValid).toBeFalsy();
+    expect(ingredientValid.unwrapOr(true)).toBeFalsy();
 
     const techniqueValid = await validateCookingTechniqueReference(
       "nonexistent",
       dependencies,
     );
-    expect(techniqueValid).toBeFalsy();
+    expect(techniqueValid.unwrapOr(true)).toBeFalsy();
 
     const recipeValid = await validateRecipeReference(
       "nonexistent",
       dependencies,
     );
-    expect(recipeValid).toBeFalsy();
+    expect(recipeValid.unwrapOr(true)).toBeFalsy();
   });
 });
 
@@ -190,18 +186,18 @@ describe("One entity of each type", () => {
     ],
   });
 
-  it("Validate single entity", async () => {
+  it("Validate single measuring feature", async () => {
     const measuringFeatureValid = await validateMeasuringFeatureReference(
       "mf1",
       dependencies,
     );
-    expect(measuringFeatureValid).toBeTruthy();
+    expect(measuringFeatureValid.unwrapOr(false)).toBeTruthy();
 
     const unitOfMeasureValid = await validateUnitOfMeasureReference(
       "uom1",
       dependencies,
     );
-    expect(unitOfMeasureValid).toBeTruthy();
+    expect(unitOfMeasureValid.unwrapOr(false)).toBeTruthy();
 
     const ingredientValid = await validateIngredientReference(
       "si1",
@@ -248,9 +244,7 @@ describe("One entity of each type", () => {
         },
       ],
     };
-    expect(
-      await validateRecipeInternalReferences(recipeInfo, dependencies),
-    ).toBeTruthy();
+    expect(await validateRecipe(recipeInfo, dependencies)).toBeTruthy();
   });
 
   it("Should return false for invalid recipe references", async () => {
@@ -279,7 +273,7 @@ describe("One entity of each type", () => {
     };
 
     expect(
-      await validateRecipeInternalReferences(invalidRecipe, dependencies),
+      (await validateRecipe(invalidRecipe, dependencies)).unwrapOr(true),
     ).toBeFalsy();
   });
 
@@ -327,7 +321,9 @@ describe("One entity of each type", () => {
       ],
     });
 
-    expect(await validateRecipeReference("r1", dependencies)).toBeFalsy();
+    expect(
+      (await validateRecipeReference("r1", dependencies)).unwrapOr(true),
+    ).toBeFalsy();
   });
 
   it("Should return false on meal with recipe self-reference", async () => {
@@ -372,7 +368,7 @@ describe("One entity of each type", () => {
           ],
         },
       ],
-      Meals: [
+      meals: [
         {
           id: "m1",
           name: "Meal with Self Reference",
@@ -387,14 +383,16 @@ describe("One entity of each type", () => {
     });
 
     expect(
-      await validateMealInternalReferences(
-        {
-          name: "Meal with Self Reference",
-          courses: [{ recipesIds: [{ type: "Recipe", id: "m1" }] }],
-          diners: 1,
-        },
-        dependencies,
-      ),
+      (
+        await validateMealContents(
+          {
+            name: "Meal with Self Reference",
+            courses: [{ recipesIds: [{ type: "Recipe", id: "m1" }] }],
+            diners: 1,
+          },
+          dependencies,
+        )
+      ).unwrapOr(true),
     ).toBeFalsy();
   });
 
@@ -441,7 +439,7 @@ describe("One entity of each type", () => {
           ],
         },
       ],
-      Meals: [
+      meals: [
         {
           id: "m1",
           name: "Meal with Invalid Recipe Reference",
@@ -456,14 +454,16 @@ describe("One entity of each type", () => {
     });
 
     expect(
-      await validateMealInternalReferences(
-        {
-          name: "Meal with Invalid Recipe Reference",
-          courses: [{ recipesIds: [{ type: "Recipe", id: "nonexistent" }] }],
-          diners: 2,
-        },
-        dependencies,
-      ),
+      (
+        await validateMealContents(
+          {
+            name: "Meal with Invalid Recipe Reference",
+            courses: [{ recipesIds: [{ type: "Recipe", id: "nonexistent" }] }],
+            diners: 2,
+          },
+          dependencies,
+        )
+      ).unwrapOr(true),
     ).toBeFalsy();
   });
 
@@ -510,7 +510,7 @@ describe("One entity of each type", () => {
           ],
         },
       ],
-      Meals: [
+      meals: [
         {
           id: "m1",
           name: "Meal with Valid Recipe Reference",
@@ -525,7 +525,7 @@ describe("One entity of each type", () => {
     });
 
     expect(
-      await validateMealInternalReferences(
+      await validateMealContents(
         {
           name: "Meal with Valid Recipe Reference",
           courses: [{ recipesIds: [{ type: "Recipe", id: "rc1" }] }],

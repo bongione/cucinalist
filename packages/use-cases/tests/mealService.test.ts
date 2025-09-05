@@ -1,5 +1,5 @@
 import { it, expect, describe } from "vitest";
-import { createMealService } from "../src";
+import { createMealService } from "../src/data_interface";
 import { createNaiveMealServiceDependencies, createNaiveRecipeServiceDependencies } from "./naive_dependencies";
 
 describe('MealService', () => {

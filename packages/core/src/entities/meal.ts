@@ -1,3 +1,4 @@
+import {ResultAsync} from '@cucinalist/fp-types'
 import { Reference } from "../types/reference";
 
 /**
@@ -22,6 +23,6 @@ export interface Course {
 }
 
 export interface MealProvider {
-  getMealById: (id: string) => Promise<Meal | null>;
-  getMealsByName: (name: string) => Promise<Meal[]>;
+  getMealById: (id: string) => ResultAsync<Meal | null, Error>;
+  getMealsByName: (name: string) => ResultAsync<Meal[], Error>;
 }

@@ -1,3 +1,4 @@
+import {ResultAsync} from '@cucinalist/fp-types'
 import { IndexOf, Reference } from "../types/reference";
 
 /**
@@ -70,6 +71,8 @@ export interface MealPreparationPhase {
  * from a data source.
  */
 export interface MealPlanProvider {
-  getMealPlanById: (id: string) => Promise<MealPlan | null>;
-  getMealPlansByMealId: (mealId: Reference<"Meal">) => Promise<MealPlan[]>;
+  getMealPlanById: (id: string) => ResultAsync<MealPlan | null, Error>;
+  getMealPlansByMealId: (
+    mealId: Reference<"Meal">,
+  ) => ResultAsync<MealPlan[], Error>;
 }

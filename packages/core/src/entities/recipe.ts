@@ -1,3 +1,4 @@
+import {ResultAsync} from '@cucinalist/fp-types'
 import { IndexOf, Reference } from "../types/reference";
 
 /**
@@ -83,7 +84,7 @@ export interface StepInput {
  * Represents a recipe provider that can fetch recipes by ID, name or tag.
  */
 export interface RecipeProvider {
-  getRecipeById: (id: string) => Promise<Recipe | null>;
-  getRecipesByName: (name: string) => Promise<Recipe[]>;
-  getRecipesByTag: (tag: string) => Promise<Recipe[]>;
+  getRecipeById: (id: string) => ResultAsync<Recipe | null, Error>;
+  getRecipesByName: (name: string) => ResultAsync<Recipe[], Error>;
+
 }

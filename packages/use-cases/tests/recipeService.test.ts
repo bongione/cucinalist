@@ -1,6 +1,6 @@
 import { it, expect, describe } from "vitest";
 import { AttentionNeeded } from "@cucinalist/core";
-import { createRecipeService } from "../src";
+import { createRecipeService } from "../src/data_interface";
 import { createNaiveRecipeServiceDependencies } from "./naive_dependencies";
 
 describe("RecipeService", () => {

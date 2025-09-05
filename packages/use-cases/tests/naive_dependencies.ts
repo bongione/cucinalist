@@ -1,18 +1,19 @@
+import { ResultAsync } from "@cucinalist/fp-types";
 import {
   CookingTechnique,
   MeasuringFeature,
   UnitOfMeasure,
   StoreBoughtIngredient,
   Recipe,
-  Meal
+  Meal,
 } from "@cucinalist/core";
 import {
   MeasurementServiceDependencies,
   CookingTechniqueServiceDependencies,
   IngredientServiceDependencies,
   RecipeServiceDependencies,
-  MealServiceDependencies, createRecipeService
-} from "../src";
+  MealServiceDependencies,
+} from "../src/data_interface";
 
 interface MeasurementServiceData {
   measuringFeatures?: MeasuringFeature[];
@@ -31,56 +32,91 @@ export function createNaiveMeasurementServiceDependencies({
   );
   return {
     measuringFeatureProvider: {
-      getMeasuringFeatureById: async (id: string) => {
-        return features.get(id) || null;
-      },
-      getMeasuringFeaturesByName: async (name: string) => {
-        return Array.from(features.values()).filter(
-          (feature) => feature.name === name,
-        );
-      },
+      getMeasuringFeatureById: ResultAsync.fromThrowable(
+        async (id: string) => {
+          return features.get(id) || null;
+        },
+        (e) => new Error(String(e)),
+      ),
+      getMeasuringFeaturesByName: ResultAsync.fromThrowable(
+        async (name: string) => {
+          return Array.from(features.values()).filter(
+            (feature) => feature.name === name,
+          );
+        },
+        (e) => new Error(String(e)),
+      ),
     },
     unitOfMeasureProvider: {
-      getUnitOfMeasureById: async (id: string) => {
-        return units.get(id) || null;
-      },
-      getUnitsOfMeasureByName: async (name: string) => {
-        return Array.from(units.values()).filter((unit) => unit.name === name);
-      },
+      getUnitOfMeasureById: ResultAsync.fromThrowable(
+        async (id: string) => {
+          return units.get(id) || null;
+        },
+        (e) => new Error(String(e)),
+      ),
+      getUnitsOfMeasureByName: ResultAsync.fromThrowable(
+        async (name: string) => {
+          return Array.from(units.values()).filter(
+            (unit) => unit.name === name,
+          );
+        },
+        (e) => new Error(String(e)),
+      ),
     },
     measurementStore: {
-      createMeasuringFeature: async (measuringFeatureInfo) => {
-        const id = crypto.randomUUID();
-        const feature = { id, ...measuringFeatureInfo };
-        features.set(id, feature);
-        return feature;
-      },
-      updateMeasuringFeature: async (id, measuringFeatureInfo) => {
-        if (!features.has(id)) throw new Error("Measuring feature not found");
-        const updatedFeature = { ...features.get(id), ...measuringFeatureInfo };
-        features.set(id, updatedFeature);
-        return updatedFeature;
-      },
-      deleteMeasuringFeature: async (id) => {
-        if (!features.has(id)) throw new Error("Measuring feature not found");
-        features.delete(id);
-      },
-      createUnitOfMeasure: async (unitOfMeasureInfo) => {
-        const id = crypto.randomUUID();
-        const unit = { id, ...unitOfMeasureInfo };
-        units.set(id, unit);
-        return unit;
-      },
-      updateUnitOfMeasure: async (unitId, unitOfMeasureInfo) => {
-        if (!units.has(unitId)) throw new Error("Unit of measure not found");
-        const updatedUnit = { ...units.get(unitId), ...unitOfMeasureInfo };
-        units.set(unitId, updatedUnit);
-        return updatedUnit;
-      },
-      deleteUnitOfMeasure: async (unitId) => {
-        if (!units.has(unitId)) throw new Error("Unit of measure not found");
-        units.delete(unitId);
-      },
+      createMeasuringFeature: ResultAsync.fromThrowable(
+        async (measuringFeatureInfo) => {
+          const id = crypto.randomUUID();
+          const feature = { id, ...measuringFeatureInfo };
+          features.set(id, feature);
+          return feature;
+        },
+        (e) => new Error(String(e)),
+      ),
+      updateMeasuringFeature: ResultAsync.fromThrowable(
+        async (id, measuringFeatureInfo) => {
+          if (!features.has(id)) throw new Error("Measuring feature not found");
+          const updatedFeature = {
+            ...features.get(id),
+            ...measuringFeatureInfo,
+          };
+          features.set(id, updatedFeature);
+          return updatedFeature;
+        },
+        (e) => new Error(String(e)),
+      ),
+      deleteMeasuringFeature: ResultAsync.fromThrowable(
+        async (id) => {
+          if (!features.has(id)) throw new Error("Measuring feature not found");
+          features.delete(id);
+        },
+        (e) => new Error(String(e)),
+      ),
+      createUnitOfMeasure: ResultAsync.fromThrowable(
+        async (unitOfMeasureInfo) => {
+          const id = crypto.randomUUID();
+          const unit = { id, ...unitOfMeasureInfo };
+          units.set(id, unit);
+          return unit;
+        },
+        (e) => new Error(String(e)),
+      ),
+      updateUnitOfMeasure: ResultAsync.fromThrowable(
+        async (unitId, unitOfMeasureInfo) => {
+          if (!units.has(unitId)) throw new Error("Unit of measure not found");
+          const updatedUnit = { ...units.get(unitId), ...unitOfMeasureInfo };
+          units.set(unitId, updatedUnit);
+          return updatedUnit;
+        },
+        (e) => new Error(String(e)),
+      ),
+      deleteUnitOfMeasure: ResultAsync.fromThrowable(
+        async (unitId) => {
+          if (!units.has(unitId)) throw new Error("Unit of measure not found");
+          units.delete(unitId);
+        },
+        (e) => new Error(String(e)),
+      ),
     },
   };
 }
@@ -97,14 +133,20 @@ export function createNaiveCookingTechniqueServiceDependencies({
   );
   return {
     cookingTechniqueProvider: {
-      getCookingTechniqueById: async (id: string) => {
-        return techniques.get(id) || null;
-      },
-      getCookingTechniquesByName: async (name: string) => {
-        return Array.from(techniques.values()).filter(
-          (technique) => technique.name === name,
-        );
-      },
+      getCookingTechniqueById: ResultAsync.fromThrowable(
+        async (id: string) => {
+          return techniques.get(id) || null;
+        },
+        (e) => new Error(String(e)),
+      ),
+      getCookingTechniquesByName: ResultAsync.fromThrowable(
+        async (name: string) => {
+          return Array.from(techniques.values()).filter(
+            (technique) => technique.name === name,
+          );
+        },
+        (e) => new Error(String(e)),
+      ),
     },
     cookingTechniqueStorage: {
       createCookingTechnique: async (techniqueInfo) => {
@@ -139,14 +181,20 @@ export function createNaiveIngredientServiceDependencies({
   );
   return {
     ingredientProvider: {
-      getStoreBoughtIngredientById: async (id: string) => {
-        return ingredients.get(id) || null;
-      },
-      getStoreBoughtIngredientsByName: async (name: string) => {
-        return Array.from(ingredients.values()).filter(
-          (ingredient) => ingredient.name === name,
-        );
-      },
+      getStoreBoughtIngredientById: ResultAsync.fromThrowable(
+        async (id: string) => {
+          return ingredients.get(id) || null;
+        },
+        (e) => new Error(String(e)),
+      ),
+      getStoreBoughtIngredientsByName: ResultAsync.fromThrowable(
+        async (name: string) => {
+          return Array.from(ingredients.values()).filter(
+            (ingredient) => ingredient.name === name,
+          );
+        },
+        (e) => new Error(String(e)),
+      ),
     },
     ingredientStorage: {
       createStoreBoughtIngredient: async (ingredientInfo) => {
@@ -187,15 +235,20 @@ export function createNaiveRecipeServiceDependencies(
     ...createNaiveMeasurementServiceDependencies(data),
     ...createNaiveIngredientServiceDependencies(data),
     recipeProvider: {
-      getRecipeById: async (id: string) => {
-        return recipes.get(id) || null;
-      },
-      getRecipesByName: async (name: string) => {
-        return Array.from(recipes.values()).filter(
-          (recipe) => recipe.name === name,
-        );
-      },
-      getRecipesByTag: async () => []
+      getRecipeById: ResultAsync.fromThrowable(
+        async (id: string) => {
+          return recipes.get(id) || null;
+        },
+        (e) => new Error(String(e)),
+      ),
+      getRecipesByName: ResultAsync.fromThrowable(
+        async (name: string) => {
+          return Array.from(recipes.values()).filter(
+            (recipe) => recipe.name === name,
+          );
+        },
+        (e) => new Error(String(e)),
+      ),
     },
     recipeStorage: {
       createRecipe: async (recipeInfo) => {
@@ -218,23 +271,34 @@ export function createNaiveRecipeServiceDependencies(
   };
 }
 
-interface MealServiceData
-  extends RecipeServiceData {
+interface MealServiceData extends RecipeServiceData {
   meals?: Meal[]; // Replace 'any' with actual recipe type
 }
 
-export function createNaiveMealServiceDependencies(data: MealServiceData = {}): MealServiceDependencies {
-  const meals: Map<string, Meal> = new Map(data.meals ? data.meals.map((m) => [m.id, m]) : []);
+export function createNaiveMealServiceDependencies(
+  data: MealServiceData = {},
+): MealServiceDependencies {
+  const meals: Map<string, Meal> = new Map(
+    data.meals ? data.meals.map((m) => [m.id, m]) : [],
+  );
   // Placeholder for meal service dependencies
   return {
     ...createNaiveRecipeServiceDependencies(data),
     mealProvider: {
-      getMealById: async (id: string) => {
-        return meals.get(id) || null;
-      },
-      getMealsByName: async (name: string) => {
-        return (Array.from(meals.values())).filter((meal) => meal.name === name);
-      },
+      getMealById: ResultAsync.fromThrowable(
+        async (id: string) => {
+          return meals.get(id) || null;
+        },
+        (e) => new Error(String(e)),
+      ),
+      getMealsByName: ResultAsync.fromThrowable(
+        async (name: string) => {
+          return Array.from(meals.values()).filter(
+            (meal) => meal.name === name,
+          );
+        },
+        (e) => new Error(String(e)),
+      ),
     },
     mealStorage: {
       createMeal: async (mealInfo) => {
@@ -253,6 +317,6 @@ export function createNaiveMealServiceDependencies(data: MealServiceData = {}): 
         if (!meals.has(id)) throw new Error("Meal not found");
         meals.delete(id);
       },
-    }
+    },
   };
 }

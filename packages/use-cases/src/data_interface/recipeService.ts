@@ -5,7 +5,7 @@ import {
   StoreBoughtIngredientProvider,
   UnitOfMeasureProvider,
   MeasuringFeatureProvider,
-  validateRecipeInternalReferences,
+  validateRecipe,
 } from "@cucinalist/core";
 import isEqual from "fast-deep-equal";
 
@@ -55,7 +55,7 @@ export function createRecipeService(
         );
       }
       // Validate references
-      const isValid = await validateRecipeInternalReferences(
+      const isValid = await validateRecipe(
         recipeInfo,
         dependencies,
       );
@@ -73,7 +73,7 @@ export function createRecipeService(
       if (isEqual(existingRecipe, updatedRecipe)) {
         return existingRecipe;
       }
-      const isValid = await validateRecipeInternalReferences(
+      const isValid = await validateRecipe(
         updatedRecipe,
         dependencies,
       );

@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { createMeasurementService } from "../src";
+import { describe, expect, it, assert } from "vitest";
+import { createMeasurementService } from "../src/data_interface";
 import { createNaiveMeasurementServiceDependencies } from "./naive_dependencies";
 
 describe("MeasurementService", () => {
@@ -13,25 +13,31 @@ describe("MeasurementService", () => {
     const service = createMeasurementService(
       createNaiveMeasurementServiceDependencies(),
     );
-    const feature = await service.getMeasuringFeatureById("non-existing-id");
-    expect(feature).toBeNull();
+    await service
+      .getMeasuringFeatureById("non-existing-id")
+      .andTee((feature) => expect(feature).toBeNull())
+      .orTee(() => assert.fail("Error while fetching measuring feature"));
   });
 
   it("Should return no matching unit of measure", async () => {
     const service = createMeasurementService(
       createNaiveMeasurementServiceDependencies(),
     );
-    const unit = await service.getUnitOfMeasureById("non-existing-id");
-    expect(unit).toBeNull();
+    await service
+      .getUnitOfMeasureById("non-existing-id")
+      .andTee((unit) => expect(unit).toBeNull())
+      .orTee(() => assert.fail("Error while fetching unit of measure"));
   });
 
   it("Should create a new measuring feature", async () => {
     const service = createMeasurementService(
       createNaiveMeasurementServiceDependencies(),
     );
-    const feature = await service.createMeasuringFeature({
-      name: "Test Feature",
-    });
+    const feature = await service
+      .createMeasuringFeature({
+        name: "Test Feature",
+      })
+      .unwrapOr({ name: "error" });
     expect(feature).toHaveProperty("id");
     expect(feature.name).toBe("Test Feature");
   });
@@ -43,20 +49,32 @@ describe("MeasurementService", () => {
     const feature = await service.createMeasuringFeature({
       name: "Test Feature",
     });
-    const fetchedFeature = await service.getMeasuringFeatureById(feature.id);
-    expect(fetchedFeature).toEqual(feature);
+    if (feature.isErr()) {
+      assert.fail("Failed to create measuring feature");
+    } else {
+      const fetchedFeature = await service.getMeasuringFeatureById(
+        feature.value.id,
+      );
+      expect(fetchedFeature).not.toBeNull();
+      if (fetchedFeature.isErr()) {
+        console.assert(false, "Failed to fetch measuring feature by ID");
+      } else {
+        expect(fetchedFeature.value.id).toBe(feature.value.id);
+        expect(fetchedFeature.value.name).toBe("Test Feature");
+        expect(fetchedFeature).toEqual(feature);
+      }
+    }
   });
 
-  it("Should throw an error when entering a measuring feature with an existing name", async () => {
+  it("Should return an error when entering a measuring feature with an existing name", async () => {
     const service = createMeasurementService(
       createNaiveMeasurementServiceDependencies(),
     );
     await service.createMeasuringFeature({ name: "Test Feature" });
-    await expect(
-      service.createMeasuringFeature({ name: "Test Feature" }),
-    ).rejects.toThrow(
-      'Measuring feature with name "Test Feature" already exists.',
-    );
+    const dupResult = await service.createMeasuringFeature({
+      name: "Test Feature",
+    });
+    expect(dupResult.isErr()).toBe(true);
   });
 
   it("Should update an existing measuring feature", async () => {
@@ -66,51 +84,75 @@ describe("MeasurementService", () => {
     const feature = await service.createMeasuringFeature({
       name: "Test Feature",
     });
-    const updatedFeature = await service.updateMeasuringFeature(feature.id, {
-      name: "Updated Feature",
-    });
-    expect(updatedFeature.name).toBe("Updated Feature");
+    if (feature.isErr()) {
+      assert.fail("Failed to create measuring feature");
+    }
+    const updatedFeature = await service.updateMeasuringFeature(
+      feature.value.id,
+      {
+        name: "Updated Feature",
+      },
+    );
+    if (updatedFeature.isOk()) {
+      expect(updatedFeature.value.name).toBe("Updated Feature");
+    } else {
+      assert.fail("Failed to update measuring feature");
+    }
   });
 
   it("Should delete an existing measuring feature", async () => {
     const service = createMeasurementService(
       createNaiveMeasurementServiceDependencies(),
     );
-    const feature = await service.createMeasuringFeature({
-      name: "Test Feature",
-    });
-    await service.deleteMeasuringFeature(feature.id);
-    const deletedFeature = await service.getMeasuringFeatureById(feature.id);
-    expect(deletedFeature).toBeNull();
+    await service
+      .createMeasuringFeature({
+        name: "Test Feature",
+      })
+      .andTee((feature) => service.deleteMeasuringFeature(feature.id))
+      .andThen((feature) => service.getMeasuringFeatureById(feature.id))
+      .map((deletedFeature) => expect(deletedFeature).toBeNull())
+      .orTee(() =>
+        assert.fail("Error while trying to delete measuring feature"),
+      );
   });
 
   it("Should create a new unit of measure", async () => {
     const service = createMeasurementService(
       createNaiveMeasurementServiceDependencies(),
     );
-    const unit = await service.createUnitOfMeasure({ name: "Test Unit" });
-    expect(unit).toHaveProperty("id");
-    expect(unit.name).toBe("Test Unit");
+    await service
+      .createUnitOfMeasure({ name: "Test Unit" })
+      .andTee((unit) => {
+        expect(unit).toHaveProperty("id");
+        expect(unit.name).toBe("Test Unit");
+      })
+      .orTee(() => assert.fail("Error while trying to create unit"));
   });
 
   it("Should update an existing unit of measure", async () => {
     const service = createMeasurementService(
       createNaiveMeasurementServiceDependencies(),
     );
-    const unit = await service.createUnitOfMeasure({ name: "Test Unit" });
-    const updatedUnit = await service.updateUnitOfMeasure(unit.id, {
-      name: "Updated Unit",
-    });
-    expect(updatedUnit.name).toBe("Updated Unit");
+    await service
+      .createUnitOfMeasure({ name: "Test Unit" })
+      .andThen((unit) =>
+        service.updateUnitOfMeasure(unit.id, {
+          name: "Updated Unit",
+        }),
+      )
+      .andTee((updatedUnit) => expect(updatedUnit.name).toBe("Updated Unit"))
+      .orTee(() => assert.fail("Error while trying to update unit"));
   });
 
   it("Should delete an existing unit of measure", async () => {
     const service = createMeasurementService(
       createNaiveMeasurementServiceDependencies(),
     );
-    const unit = await service.createUnitOfMeasure({ name: "Test Unit" });
-    await service.deleteUnitOfMeasure(unit.id);
-    const deletedUnit = await service.getUnitOfMeasureById(unit.id);
-    expect(deletedUnit).toBeNull();
+    await service
+      .createUnitOfMeasure({ name: "Test Unit" })
+      .andTee((unit) => service.deleteUnitOfMeasure(unit.id))
+      .andThen((unit) => service.getUnitOfMeasureById(unit.id))
+      .andTee((deletedUnit) => expect(deletedUnit).toBeNull())
+      .orTee(() => assert.fail("Error while trying to delete unit"));
   });
 });
