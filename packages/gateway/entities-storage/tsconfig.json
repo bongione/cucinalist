@@ -8,6 +8,5 @@
       "moduleResolution": "nodenext",
       "esModuleInterop": true,
       "types": ["node"]
-    },
-    "include": ["src/**/*.ts", "test/**/*.ts"]
+    }
   }

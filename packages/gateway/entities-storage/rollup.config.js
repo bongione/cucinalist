@@ -4,23 +4,18 @@ import typescript from "@rollup/plugin-typescript";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import * as path from "node:path";
 export default {
-  input: {
-    index: "src/index.ts",
-    "entities-storage": "src/entities-storage/index.ts",
-  }, // Entry point of your library
+  input: "src/index.ts", // Entry point of your library
   rootDir: "./src",
   output: [
     {
-      dir: "dist", // CommonJS output
+      file: "dist/index.cjs", // CommonJS output
       format: "cjs",
       sourcemap: true,
-      entryFileNames: "[name].cjs"
     },
     {
-      dir: "dist", // ES Module output
+      file: "dist/index.mjs", // ES Module output
       format: "esm",
       sourcemap: true,
-      entryFileNames: "[name].mjs"
     },
   ],
   plugins: [

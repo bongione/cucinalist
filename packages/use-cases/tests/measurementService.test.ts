@@ -1,5 +1,5 @@
 import { describe, expect, it, assert } from "vitest";
-import { createMeasurementService } from "../src/data_interface";
+import { createMeasurementService } from "../src/entities-storage";
 import { createNaiveMeasurementServiceDependencies } from "./naive_dependencies";
 
 describe("MeasurementService", () => {

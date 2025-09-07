@@ -5,8 +5,7 @@ import { nodeResolve } from "@rollup/plugin-node-resolve";
 import * as path from "node:path";
 export default {
   input: {
-    index: "src/index.ts",
-    "entities-storage": "src/entities-storage/index.ts",
+    index: "src/index.ts"
   }, // Entry point of your library
   rootDir: "./src",
   output: [

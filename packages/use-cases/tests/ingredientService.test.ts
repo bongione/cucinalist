@@ -1,6 +1,6 @@
 import {it, expect, describe} from "vitest";
 
-import {createIngredientService} from "../src/data_interface";
+import {createIngredientService} from "../src/entities-storage";
 import {createNaiveIngredientServiceDependencies} from "./naive_dependencies";
 
 describe("IngredientService", () => {

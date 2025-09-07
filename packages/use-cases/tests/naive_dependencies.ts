@@ -13,7 +13,7 @@ import {
   IngredientServiceDependencies,
   RecipeServiceDependencies,
   MealServiceDependencies,
-} from "../src/data_interface";
+} from "../src/entities-storage";
 
 interface MeasurementServiceData {
   measuringFeatures?: MeasuringFeature[];

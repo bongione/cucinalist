@@ -1,8 +1,7 @@
 {
-  "name": "@cucinalist/core",
-  "displayName": "cucinalist-core",
-  "description": "Cucinalist core entities",
+  "name": "@cucinalist/entities-storage",
   "version": "0.0.1",
+  "description": "",
   "exports": {
     "import": "./dist/index.mjs",
     "require": "./dist/index.cjs",
@@ -30,13 +29,6 @@
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   },
-  "keywords": [
-    "cucinalist",
-    "core-entities"
-  ],
   "author": "Paolo F. Bongiovanni <paolo.bongiovanni@mindiply.com>",
-  "license": "MIT",
-  "dependencies": {
-    "@cucinalist/fp-types": "^1.0.0"
-  }
+  "license": "MIT"
 }

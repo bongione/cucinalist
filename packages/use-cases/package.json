@@ -4,8 +4,16 @@
   "description": "Cucinalist use cases",
   "version": "0.0.1",
   "exports": {
-    "import": "./dist/index.mjs",
-    "require": "./dist/index.cjs"
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "types": "./dist/types/index.d.ts"
+    },
+    "./entities-storage": {
+      "import": "./dist/entities-storage.mjs",
+      "require": "./dist/entities-storage.cjs",
+      "types": "./dist/types/entities-storage/index.d.ts"
+    }
   },
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",

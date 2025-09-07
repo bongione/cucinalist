@@ -1,5 +1,6 @@
 import {ResultAsync} from '@cucinalist/fp-types'
 import { IndexOf, Reference } from "../types/reference";
+import { Measurement } from "./measurement";
 
 /**
  * A recipe describes how to prepare a dish, including the ingredients and steps
@@ -21,10 +22,8 @@ export interface Recipe {
 /**
  * Represents an ingredient with a specific quantity and unit of measure.
  */
-export interface IngredientWithQuantity {
+export interface IngredientWithQuantity extends Measurement {
   ingredientId: Reference<"StoreBoughtIngredient" | "Recipe">;
-  quantity: number;
-  unitId: Reference<"Unit">;
 }
 
 /**

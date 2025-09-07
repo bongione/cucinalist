@@ -5,68 +5,23 @@ import {
 } from "../entities/ingredient";
 import {
   MeasuringFeature,
-  MeasuringFeatureProvider,
+  unitOfMeasure,
   UnitOfMeasure,
-  UnitOfMeasureProvider,
 } from "../entities/measurement";
 import {
   CookingTechnique,
   CookingTechniqueProvider,
 } from "../entities/cooking-technique";
 import { Meal, MealProvider } from "../entities/meal";
-import { ok, okAsync, ResultAsync } from "@cucinalist/fp-types";
-
-export interface ValidateMeasuringFeatureDependencies {
-  measuringFeatureProvider: MeasuringFeatureProvider;
-}
-
-export function validateMeasuringFeature(measuringFeature: MeasuringFeature) {
-  if (!measuringFeature) {
-    return false;
-  }
-  if (!measuringFeature.name || measuringFeature.name.trim() === "") {
-    return false;
-  }
-  return true;
-}
-
-export function validateMeasuringFeatureReference(
-  measuringFeatureId: string,
-  dependencies: ValidateMeasuringFeatureDependencies,
-): ResultAsync<boolean, Error> {
-  return dependencies.measuringFeatureProvider
-    .getMeasuringFeatureById(measuringFeatureId)
-    .map((mf) => (mf ? validateMeasuringFeature(mf) : false));
-}
-
-export interface ValidateUnitOfMeasureDependencies
-  extends ValidateMeasuringFeatureDependencies {
-  unitOfMeasureProvider: UnitOfMeasureProvider;
-}
-
-function validateUnitOfMeasure(
-  uom: UnitOfMeasure,
-  dependencies: ValidateUnitOfMeasureDependencies,
-): ResultAsync<boolean, Error> {
-  if (!uom) {
-    return okAsync(false);
-  }
-  if (!uom.name || uom.name.trim() === "") {
-    return okAsync(false);
-  }
-  if (uom.measuringId) {
-    return validateMeasuringFeatureReference(uom.measuringId, dependencies);
-  }
-  return okAsync(true);
-}
+import { ResultAsync, okAsync, Result } from "@cucinalist/fp-types";
 
 export function validateUnitOfMeasureReference(
-  unitId: string,
-  dependencies: ValidateUnitOfMeasureDependencies,
-): ResultAsync<boolean, Error> {
-  return dependencies.unitOfMeasureProvider
-    .getUnitOfMeasureById(unitId)
-    .andThen((md) => validateUnitOfMeasure(md, dependencies));
+  qualifier: string,
+): Result<boolean, Error> {
+  return Result.fromThrowable(
+    () => unitOfMeasure(qualifier).isJust(),
+    (e) => new Error(String(e)),
+  )();
 }
 
 export interface ValidateIngredientDependencies {
@@ -116,8 +71,7 @@ export function validateCookingTechnique(ct: CookingTechnique) {
 }
 
 export interface RecipeReferenceValidationDependencies
-  extends ValidateUnitOfMeasureDependencies,
-    ValidateIngredientDependencies,
+  extends ValidateIngredientDependencies,
     ValidateCookingTechniqueDependencies {
   recipeProvider: RecipeProvider;
 }
@@ -138,6 +92,13 @@ export function validateRecipe(
     return okAsync(false);
   }
 
+  const unitChecks = recipe.ingredients.map((i) =>
+    validateUnitOfMeasureReference(i.unit),
+  );
+  if (unitChecks.some((r) => r.isErr() || r.value === false)) {
+    return okAsync(false);
+  }
+
   const ingredientsChecks = recipe.ingredients.map((i) =>
     i.ingredientId.type === "Recipe"
       ? (recipe as Recipe).id
@@ -150,17 +111,12 @@ export function validateRecipe(
   // if (ingredientsChecks.some((e) => e.isErr() || e.value === false)) {
   //   return false;
   // }
-  const unitChecks = recipe.ingredients.map((i) =>
-    validateIngredientReference(i.ingredientId.id, dependencies),
-  );
   const techniquesChecks = recipe.steps.map((step) =>
     validateCookingTechniqueReference(step.techniqueId.id, dependencies),
   );
-  return ResultAsync.combine([
-    ...ingredientsChecks,
-    ...unitChecks,
-    ...techniquesChecks,
-  ]).map((rs) => rs.every((b) => b));
+  return ResultAsync.combine([...ingredientsChecks, ...techniquesChecks]).map(
+    (rs) => rs.every((b) => b),
+  );
 }
 
 export function validateRecipeReference(

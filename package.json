@@ -25,6 +25,8 @@
   "homepage": "https://github.com/bongione/cucinalist#readme",
   "workspaces": [
     "packages/*",
-    "packages/utility/fp-types"
+    "packages/utility/fp-types",
+    "packages/gateway/entities-storage",
+    "packages/infrastructure/prisma-entities"
   ]
 }
