@@ -1,5 +1,5 @@
 import {ResultAsync} from '@cucinalist/fp-types'
-import { IndexOf, Reference } from "../types/reference";
+import { IndexOf, Reference } from "../types/reference.js";
 
 /**
  * Represents a plan to deliver a meal, modelled as one or more preparation phases.

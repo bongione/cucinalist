@@ -1,5 +1,5 @@
 import {ResultAsync} from '@cucinalist/fp-types'
-import { IndexOf, Reference } from "../types/reference";
+import { IndexOf, Reference } from "../types/reference.js";
 
 /**
  * Represents the execution of a meal plan. It tracks the progress of the meal

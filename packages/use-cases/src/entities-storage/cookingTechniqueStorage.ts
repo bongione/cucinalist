@@ -1,11 +1,14 @@
-import { ResultAsync, okAsync } from "@cucinalist/fp-types";
-import type { CookingTechnique as CoreCookingTechnique, CookingTechniqueProvider } from "@cucinalist/core";
-export type CookingTechnique = CoreCookingTechnique;
-
-export type CookingTechniqueInfo = Omit<CookingTechnique, "id" | "synonyms" | "techniqueOutput"> & Partial<Pick<
+import { ResultAsync } from "@cucinalist/fp-types";
+import type {
   CookingTechnique,
-  "synonyms"
->>;
+  CookingTechniqueProvider,
+} from "@cucinalist/core";
+
+export type CookingTechniqueInfo = Omit<
+  CookingTechnique,
+  "id" | "synonyms" | "techniqueOutput"
+> &
+  Partial<Pick<CookingTechnique, "synonyms">>;
 
 interface CookingTechniqueStorageOps extends CookingTechniqueProvider {
   createCookingTechnique: (

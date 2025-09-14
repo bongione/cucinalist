@@ -1,6 +1,6 @@
-import {ResultAsync} from '@cucinalist/fp-types'
-import { IndexOf, Reference } from "../types/reference";
-import { Measurement } from "./measurement";
+import { ResultAsync } from "@cucinalist/fp-types";
+import { IndexOf, Reference } from "../types/reference.js";
+import { Measurement } from "./measurement.js";
 
 /**
  * A recipe describes how to prepare a dish, including the ingredients and steps
@@ -31,12 +31,11 @@ export interface IngredientWithQuantity extends Measurement {
  * means that the process is all consuming, while lower levels indicate that
  * you can step away for a while if not do something completely in parallel.
  */
-export enum AttentionNeeded {
-  FullAttention = "FullAttention",
-  CheckRegularly = "CheckRegularly",
-  CheckOccasionally = "CheckOccasionally",
-  CanUseTimer = "CanUseTimer",
-}
+export type AttentionNeeded =
+  | "FullAttention"
+  | "CheckRegularly"
+  | "CheckOccasionally"
+  | "CanUseTimer";
 
 /**
  * The duration of a cooking step, including the level of attention needed.
@@ -54,7 +53,6 @@ export interface Duration {
 export interface StepPrecondition<T extends string> extends IndexOf<T> {
   conditionDescription?: string;
 }
-
 
 /**
  * Represents a cooking step in a recipe, detailing the technique used, duration,
@@ -74,9 +72,8 @@ export interface CookingStep {
  * Represents an input to a cooking step, which can be a portion of an ingredient
  * or a reference to the output to another step in the recipe.
  */
-export interface StepInput {
+export interface StepInput extends IndexOf<"RecipeIngredients" | "RecipeSteps"> {
   portion?: number;
-  ingredientIndex: IndexOf<"RecipeIngredients" | "RecipeSteps">;
 }
 
 /**
@@ -85,5 +82,4 @@ export interface StepInput {
 export interface RecipeProvider {
   getRecipeById: (id: string) => ResultAsync<Recipe | null, Error>;
   getRecipesByName: (name: string) => ResultAsync<Recipe[], Error>;
-
 }

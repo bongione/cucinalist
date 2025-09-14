@@ -1,5 +1,5 @@
 import {ResultAsync} from '@cucinalist/fp-types'
-import { Reference } from "../types/reference";
+import { Reference } from "../types/reference.js";
 
 /**
  * A meal is where you collect recipes to be prepared together, grouped in

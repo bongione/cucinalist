@@ -1,40 +1,26 @@
-import { CookingTechniqueStorage } from "./cookingTechniqueStorage.js";
+import type { CookingTechniqueStorage } from "./cookingTechniqueStorage.js";
+import type { StoreBoughtIngredientStorage } from "./storeBoughtIngredientStorage.js";
+import type { RecipeStorage } from "./recipeStorage.js";
+import type { MealStorage } from "./mealStorage.js";
+import { TransactionalStorage } from "./transactionalStorage.js";
 
-export {
+export type {
   CookingTechniqueInfo,
   CookingTechniqueStorage,
-  CookingTechnique,
 } from "./cookingTechniqueStorage.js";
 
-export {
-  IngredientService,
-  IngredientStorage,
+export type {
   StoreBoughtIngredientInfo,
-  IngredientServiceDependencies,
-} from "./ingredientService.js";
+  StoreBoughtIngredientStorage,
+} from "./storeBoughtIngredientStorage.js";
 
-export {
-  RecipeService,
-  RecipeServiceDependencies,
-  RecipeStorage,
-  RecipeInfo,
-} from "./recipeService.js";
+export type { RecipeStorage, RecipeInfo } from "./recipeStorage.js";
 
-export {
-  MealInfo,
-  MealService,
-  MealServiceDependencies,
-  MealStorage,
-  createMealService,
-} from "./mealService.js";
+export type { MealStorage, MealInfo } from "./mealStorage.js";
 
-export type EntitiesStorageApi = CookingTechniqueStorage;
+export type EntitiesStorageApi = CookingTechniqueStorage &
+  StoreBoughtIngredientStorage &
+  RecipeStorage &
+  MealStorage;
 
-export interface EntitiesStorageTaskOrTx<R> {
-  (measurementStorage: EntitiesStorageApi): R;
-}
-
-export interface EntitiesStorageProvider {
-  tx: <R>(fn: EntitiesStorageTaskOrTx<R>) => R;
-  task: <R>(fn: EntitiesStorageTaskOrTx<R>) => R;
-}
+export type EntitiesStorageProvider = TransactionalStorage<EntitiesStorageApi>;

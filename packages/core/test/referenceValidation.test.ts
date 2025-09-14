@@ -173,7 +173,7 @@ describe("One entity of each type", () => {
             duration: { attention: AttentionNeeded.FullAttention, minutes: 10 },
             inputs: [
               {
-                ingredientIndex: { type: "RecipeIngredients", index: 0 },
+                inputIndex: { type: "RecipeIngredients", index: 0 },
                 portion: 1,
               },
             ],
@@ -234,7 +234,7 @@ describe("One entity of each type", () => {
           duration: { attention: AttentionNeeded.FullAttention, minutes: 10 },
           inputs: [
             {
-              ingredientIndex: { type: "RecipeIngredients", index: 0 },
+              inputIndex: { type: "RecipeIngredients", index: 0 },
               portion: 1,
             },
           ],
@@ -308,7 +308,7 @@ describe("One entity of each type", () => {
               },
               inputs: [
                 {
-                  ingredientIndex: { type: "RecipeIngredients", index: 0 },
+                  inputIndex: { type: "RecipeIngredients", index: 0 },
                   portion: 1,
                 },
               ],
@@ -357,7 +357,7 @@ describe("One entity of each type", () => {
               },
               inputs: [
                 {
-                  ingredientIndex: { type: "RecipeIngredients", index: 0 },
+                  inputIndex: { type: "RecipeIngredients", index: 0 },
                   portion: 1,
                 },
               ],
@@ -427,7 +427,7 @@ describe("One entity of each type", () => {
               },
               inputs: [
                 {
-                  ingredientIndex: { type: "RecipeIngredients", index: 0 },
+                  inputIndex: { type: "RecipeIngredients", index: 0 },
                   portion: 1,
                 },
               ],
@@ -498,7 +498,7 @@ describe("One entity of each type", () => {
               },
               inputs: [
                 {
-                  ingredientIndex: { type: "RecipeIngredients", index: 0 },
+                  inputIndex: { type: "RecipeIngredients", index: 0 },
                   portion: 1,
                 },
               ],

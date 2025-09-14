@@ -3,7 +3,7 @@ import { AttentionNeeded } from "@cucinalist/core";
 import { createRecipeService } from "../src/entities-storage";
 import { createNaiveRecipeServiceDependencies } from "./naive_dependencies";
 
-describe("RecipeService", () => {
+describe("RecipeStorage", () => {
   describe("createRecipe", () => {
     it("Should return an empty recipe", async () => {
       const service = createRecipeService(

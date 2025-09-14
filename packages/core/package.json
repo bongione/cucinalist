@@ -13,6 +13,7 @@
   "types": "dist/types/index.d.ts",
   "scripts": {
     "build": "rollup --bundleConfigAsCjs -c",
+    "build:watch": "rollup --watch --bundleConfigAsCjs -c",
     "clean": "rm -rf dist",
     "test": "vitest",
     "test:cover": "vitest --coverage"

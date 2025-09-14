@@ -1,8 +1,6 @@
 import { ResultAsync, okAsync, errAsync } from "@cucinalist/fp-types";
-import type {
-  CookingTechnique,
-  CookingTechniqueStorage,
-} from "@cucinalist/use-cases/entities-storage";
+import type { CookingTechnique } from "@cucinalist/core";
+import type { CookingTechniqueStorage } from "@cucinalist/use-cases/entities-storage";
 import { prisma } from "@cucinalist/prisma-entities";
 
 export function createCookingTechniqueStorage(): CookingTechniqueStorage {

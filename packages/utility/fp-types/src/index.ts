@@ -11,5 +11,7 @@ export {
   fromThrowable,
 } from "neverthrow";
 
+import { Result, ResultAsync } from 'neverthrow';
+
 export {Maybe, Just, Nothing} from 'purify-ts/Maybe';
 export {MaybeAsync} from 'purify-ts/MaybeAsync';
